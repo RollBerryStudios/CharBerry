@@ -137,6 +137,13 @@ test.describe('CharBerry Electron QA', () => {
     }
   })
 
+  test('flushes pending character edits when the window closes immediately', async ({}, testInfo) => {
+    const { app, page, libraryPath } = await launchCharBerry(testInfo)
+    await page.getByLabel('Name').fill('Quick Close Ranger')
+    await app.close()
+    expect(readSavedLibrary(libraryPath).characters[0].name).toBe('Quick Close Ranger')
+  })
+
   test('edits story, notes, vitals, inspiration, saving throws, and spellcasting ability', async ({}, testInfo) => {
     const { app, page, libraryPath } = await launchCharBerry(testInfo)
     try {

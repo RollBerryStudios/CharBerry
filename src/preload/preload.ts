@@ -65,6 +65,7 @@ export interface CharacterLibrary {
 export interface CharBerryAPI {
   loadLibrary: () => Promise<CharacterLibrary>
   saveLibrary: (library: CharacterLibrary) => Promise<boolean>
+  saveLibrarySync: (library: CharacterLibrary) => boolean
   exportLibrary: (library: CharacterLibrary) => Promise<{ success: boolean; filePath?: string; canceled?: boolean }>
   importLibrary: () => Promise<CharacterLibrary | null>
   revealData: () => Promise<string>
@@ -74,6 +75,7 @@ export interface CharBerryAPI {
 const api: CharBerryAPI = {
   loadLibrary: () => ipcRenderer.invoke('charberry:library-load'),
   saveLibrary: (library) => ipcRenderer.invoke('charberry:library-save', library),
+  saveLibrarySync: (library) => Boolean(ipcRenderer.sendSync('charberry:library-save-sync', library)),
   exportLibrary: (library) => ipcRenderer.invoke('charberry:library-export', library),
   importLibrary: () => ipcRenderer.invoke('charberry:library-import'),
   revealData: () => ipcRenderer.invoke('charberry:reveal-data'),

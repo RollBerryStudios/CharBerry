@@ -137,6 +137,7 @@ export default function App() {
   const [tab, setTab] = useState<TabId>('overview')
   const [toast, setToast] = useState<string | null>(null)
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const libraryRef = useRef(library)
 
   const activeCharacter = library.characters.find((character) => character.id === library.activeCharacterId) ?? library.characters[0]
 
@@ -148,11 +149,42 @@ export default function App() {
   }, [])
 
   useEffect(() => {
+    libraryRef.current = library
+  }, [library])
+
+  function flushLibrarySave(): void {
+    if (!ready) return
+    if (saveTimer.current) {
+      clearTimeout(saveTimer.current)
+      saveTimer.current = null
+    }
+    window.charberry.saveLibrarySync(libraryRef.current)
+  }
+
+  useEffect(() => {
     if (!ready) return
     if (saveTimer.current) clearTimeout(saveTimer.current)
-    saveTimer.current = setTimeout(() => void window.charberry.saveLibrary(library), 250)
+    saveTimer.current = setTimeout(() => {
+      saveTimer.current = null
+      void window.charberry.saveLibrary(library)
+    }, 250)
     return () => { if (saveTimer.current) clearTimeout(saveTimer.current) }
   }, [library, ready])
+
+  useEffect(() => {
+    if (!ready) return
+    const flush = () => flushLibrarySave()
+    const flushWhenHidden = () => { if (document.visibilityState === 'hidden') flushLibrarySave() }
+    window.addEventListener('beforeunload', flush)
+    window.addEventListener('pagehide', flush)
+    document.addEventListener('visibilitychange', flushWhenHidden)
+    return () => {
+      flushLibrarySave()
+      window.removeEventListener('beforeunload', flush)
+      window.removeEventListener('pagehide', flush)
+      document.removeEventListener('visibilitychange', flushWhenHidden)
+    }
+  }, [ready])
 
   const filteredCharacters = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -200,10 +232,17 @@ export default function App() {
   }
 
   async function importLibrary(): Promise<void> {
-    const imported = await window.charberry.importLibrary()
-    if (!imported) return
-    setLibrary(imported)
-    notify('Library imported')
+    try {
+      const imported = await window.charberry.importLibrary()
+      if (!imported) {
+        notify('Import canceled or invalid')
+        return
+      }
+      setLibrary(imported)
+      notify('Library imported')
+    } catch {
+      notify('Import failed')
+    }
   }
 
   function upsertAttack(id: string, patch: Partial<CharacterAttack>): void {

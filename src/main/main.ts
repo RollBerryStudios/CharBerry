@@ -316,6 +316,13 @@ function ownerWindow(event: IpcMainInvokeEvent): BrowserWindow | null {
 function registerIpc(): void {
   ipcMain.handle('charberry:library-load', () => loadLibrary())
   ipcMain.handle('charberry:library-save', (_event, library: CharacterLibrary) => saveLibrary(library))
+  ipcMain.on('charberry:library-save-sync', (event, library: CharacterLibrary) => {
+    try {
+      event.returnValue = saveLibrary(library)
+    } catch {
+      event.returnValue = false
+    }
+  })
   ipcMain.handle('charberry:library-export', async (event, library: CharacterLibrary) => {
     const options = {
       title: 'Export CharBerry library',
@@ -337,7 +344,11 @@ function registerIpc(): void {
     const owner = ownerWindow(event)
     const result = owner ? await dialog.showOpenDialog(owner, options) : await dialog.showOpenDialog(options)
     if (result.canceled || !result.filePaths[0]) return null
-    return normalizeLibrary(JSON.parse(readFileSync(result.filePaths[0], 'utf8')))
+    try {
+      return normalizeLibrary(JSON.parse(readFileSync(result.filePaths[0], 'utf8')))
+    } catch {
+      return null
+    }
   })
   ipcMain.handle('charberry:reveal-data', async () => shell.openPath(userDataPath()))
   ipcMain.handle('charberry:confirm', async (event, message: string, detail?: string) => {
@@ -374,9 +385,13 @@ function createWindow(): void {
       preload: join(appRoot(), 'dist/preload/preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: false,
+      sandbox: true,
+      nodeIntegrationInWorker: false,
+      webviewTag: false,
     },
   })
+  mainWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
+  mainWindow.webContents.on('will-attach-webview', (event) => event.preventDefault())
   if (isDev) void mainWindow.loadURL(RENDERER_URL)
   else void mainWindow.loadFile(join(appRoot(), 'dist/renderer/index.html'))
 }
@@ -385,6 +400,7 @@ app.whenReady().then(() => {
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     callback({ responseHeaders: { ...details.responseHeaders, 'Content-Security-Policy': [contentSecurityPolicy()] } })
   })
+  session.defaultSession.setPermissionRequestHandler((_wc, _permission, callback) => callback(false))
   registerIpc()
   createWindow()
   app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow() })
