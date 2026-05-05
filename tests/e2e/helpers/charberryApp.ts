@@ -27,9 +27,12 @@ export interface CharacterSheet {
   spellcastingAbility: AbilityKey
   hitDice: string
   inspiration: boolean
+  portraitDataUrl: string
   attacks: Array<{ id: string; name: string; bonus: string; damage: string; damageType: string; range: string; notes: string }>
   spells: Array<{ id: string; level: number; name: string; prepared: boolean; notes: string }>
   inventory: string
+  inventoryItems: Array<{ id: string; name: string; quantity: number; weight: number; value: string; equipped: boolean; notes: string }>
+  currency: { cp: number; sp: number; ep: number; gp: number; pp: number }
   features: string
   personality: string
   ideals: string
@@ -37,6 +40,7 @@ export interface CharacterSheet {
   flaws: string
   backstory: string
   notes: string
+  sessionNotes: Array<{ id: string; date: string; title: string; body: string; tags: string[] }>
   updatedAt: string
 }
 
@@ -44,6 +48,7 @@ export interface CharacterLibrary {
   version: 1
   activeCharacterId: string | null
   characters: CharacterSheet[]
+  settings?: { locale: 'en' | 'de' }
 }
 
 export interface LaunchedCharBerry {
@@ -101,6 +106,7 @@ export function sampleLibrary(): CharacterLibrary {
     spellcastingAbility: 'wis',
     hitDice: '5d10',
     inspiration: false,
+    portraitDataUrl: '',
     attacks: [
       { id: 'atk-bow', name: 'Longbow', bonus: '+7', damage: '1d8+4', damageType: 'piercing', range: '150/600', notes: '' },
     ],
@@ -108,16 +114,23 @@ export function sampleLibrary(): CharacterLibrary {
       { id: 'spell-pass', level: 2, name: 'Pass without trace', prepared: true, notes: '+10 stealth aura.' },
     ],
     inventory: 'Explorer pack, longbow, shortsword',
-    features: 'Favored Foe, Natural Explorer, Extra Attack',
+    inventoryItems: [
+      { id: 'item-pack', name: 'Explorer pack', quantity: 1, weight: 59, value: '10 gp', equipped: false, notes: '' },
+      { id: 'item-bow', name: 'Longbow', quantity: 1, weight: 2, value: '50 gp', equipped: true, notes: '' },
+      { id: 'item-sword', name: 'Shortsword', quantity: 1, weight: 2, value: '10 gp', equipped: true, notes: '' },
+    ],
+    currency: { cp: 0, sp: 0, ep: 0, gp: 22, pp: 0 },
+    features: 'Favored Enemy, Natural Explorer, Extra Attack',
     personality: 'Quietly maps every exit.',
     ideals: 'No one gets left behind.',
     bonds: '',
     flaws: '',
     backstory: 'Raised between cities and deep pine roads.',
     notes: 'Tracks enemy movement.',
+    sessionNotes: [{ id: 'note-track', date: '2026-05-05', title: 'Trail signs', body: 'Tracks enemy movement.', tags: ['session'] }],
     updatedAt: '2026-05-05T10:00:00.000Z',
   }
-  return { version: 1, activeCharacterId: character.id, characters: [character] }
+  return { version: 1, activeCharacterId: character.id, characters: [character], settings: { locale: 'en' } }
 }
 
 export function prepareUserData(userDataDir: string, library: CharacterLibrary = sampleLibrary()): string {

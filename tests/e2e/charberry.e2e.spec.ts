@@ -42,6 +42,8 @@ test.describe('CharBerry Electron QA', () => {
       await page.getByRole('button', { name: 'Notes' }).click()
       await expect(page.getByRole('heading', { name: 'Inventory' })).toBeVisible()
       await expect(page.getByRole('heading', { name: 'Session Notes' })).toBeVisible()
+      await expect(page.locator('.inventory-row')).toHaveCount(3)
+      await expect(page.locator('.session-note')).toHaveCount(1)
     } finally {
       await app.close()
     }
@@ -170,8 +172,14 @@ test.describe('CharBerry Electron QA', () => {
       await expect(page).toHaveScreenshot('charberry-story-edited-desktop.png', { fullPage: true })
 
       await page.getByRole('button', { name: 'Notes' }).click()
-      await page.locator('.text-card', { hasText: 'Inventory' }).locator('textarea').fill('Moonlit compass, rope, field journal')
-      await page.locator('.text-card', { hasText: 'Session Notes' }).locator('textarea').fill('Ask the smith about the ash-covered arrowheads.')
+      await page.getByRole('button', { name: 'Add Item' }).click()
+      await page.getByLabel('Item name').last().fill('Compass')
+      await page.getByLabel('Item quantity').last().fill('2')
+      await page.getByLabel('Item weight').last().fill('1.5')
+      await page.getByLabel('Item value').last().fill('75 gp')
+      await page.getByRole('button', { name: 'Add Note' }).click()
+      await page.getByLabel('Session note title').first().fill('Ash arrowheads')
+      await page.getByLabel('Session note body').first().fill('Ask the smith about the ash-covered arrowheads.')
       await expect(page).toHaveScreenshot('charberry-notes-edited-desktop.png', { fullPage: true })
 
       await expect.poll(() => {
@@ -185,7 +193,8 @@ test.describe('CharBerry Electron QA', () => {
           wisSave: active.savingThrows.wis,
           personality: active.personality,
           inventory: active.inventory,
-          notes: active.notes,
+          inventoryItem: active.inventoryItems.at(-1)?.name,
+          note: active.sessionNotes[0]?.title,
         }
       }).toEqual({
         ac: 18,
@@ -195,8 +204,9 @@ test.describe('CharBerry Electron QA', () => {
         spellAbility: 'int',
         wisSave: true,
         personality: 'Speaks softly before drawing a blade.',
-        inventory: 'Moonlit compass, rope, field journal',
-        notes: 'Ask the smith about the ash-covered arrowheads.',
+        inventory: 'Explorer pack, Longbow, Shortsword, 2x Compass',
+        inventoryItem: 'Compass',
+        note: 'Ash arrowheads',
       })
     } finally {
       await app.close()
@@ -253,6 +263,50 @@ test.describe('CharBerry Electron QA', () => {
       await assertVisibleLayout(page)
       await assertNoUnexpectedOverlaps(page)
       await expect(page).toHaveScreenshot('charberry-combat-responsive.png', { fullPage: true })
+    } finally {
+      await app.close()
+    }
+  })
+
+  test('supports German UI, SRD creator, structured inventory/session notes, and context menus', async ({}, testInfo) => {
+    const { app, page, libraryPath } = await launchCharBerry(testInfo)
+    try {
+      await page.getByLabel('Language').selectOption('de')
+      await expect(page.getByRole('heading', { name: 'Charaktere' })).toBeVisible()
+      await expect(page.getByRole('button', { name: 'Assistent' })).toBeVisible()
+      await page.getByRole('button', { name: 'Assistent' }).click()
+      await expect(page.getByRole('dialog', { name: 'Charakter-Assistent' })).toBeVisible()
+      await page.getByRole('dialog').locator('select').nth(1).selectOption('Wizard')
+      await page.getByRole('dialog').locator('select').nth(0).selectOption('Elf')
+      await page.getByRole('dialog').locator('select').nth(2).selectOption('Sage')
+      await page.getByRole('button', { name: 'Assistent anwenden' }).click()
+      await expect(page.getByLabel('Class', { exact: true })).toHaveValue('Wizard')
+      await expect(page.getByLabel('Ancestry')).toHaveValue('Elf')
+
+      await page.getByRole('button', { name: 'Notizen' }).click()
+      await page.getByRole('button', { name: 'Gegenstand hinzufügen' }).click()
+      await page.getByLabel('Item name').last().fill('Spellbook')
+      await page.getByLabel('Item name').last().click({ button: 'right' })
+      await expect(page.getByRole('menu', { name: 'Aktionsmenü' })).toBeVisible()
+      await page.getByRole('button', { name: 'Duplizieren' }).click()
+      await expect.poll(() => page.getByLabel('Item name').evaluateAll((inputs) => inputs.filter((input) => (input as HTMLInputElement).value === 'Spellbook').length)).toBe(2)
+      await page.getByRole('button', { name: 'Notiz hinzufügen' }).click()
+      await page.getByLabel('Session note title').first().fill('Erste Sitzung')
+      await assertVisibleLayout(page)
+      await assertNoUnexpectedOverlaps(page)
+      await expect(page).toHaveScreenshot('charberry-german-wizard-notes-desktop.png', { fullPage: true })
+
+      await expect.poll(() => {
+        const saved = readSavedLibrary(libraryPath)
+        const active = saved.characters[0]
+        return {
+          locale: saved.settings?.locale,
+          className: active.className,
+          ancestry: active.ancestry,
+          spellbooks: active.inventoryItems.filter((item) => item.name === 'Spellbook').length,
+          note: active.sessionNotes[0]?.title,
+        }
+      }).toEqual({ locale: 'de', className: 'Wizard', ancestry: 'Elf', spellbooks: 2, note: 'Erste Sitzung' })
     } finally {
       await app.close()
     }

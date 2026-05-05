@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer } from 'electron'
 
 export type AbilityKey = 'str' | 'dex' | 'con' | 'int' | 'wis' | 'cha'
 export type SkillRank = 'none' | 'proficient' | 'expertise'
+export type Locale = 'en' | 'de'
 
 export interface CharacterAttack {
   id: string
@@ -19,6 +20,24 @@ export interface CharacterSpell {
   name: string
   prepared: boolean
   notes: string
+}
+
+export interface CharacterInventoryItem {
+  id: string
+  name: string
+  quantity: number
+  weight: number
+  value: string
+  equipped: boolean
+  notes: string
+}
+
+export interface CharacterSessionNote {
+  id: string
+  date: string
+  title: string
+  body: string
+  tags: string[]
 }
 
 export interface CharacterSheet {
@@ -43,9 +62,12 @@ export interface CharacterSheet {
   spellcastingAbility: AbilityKey
   hitDice: string
   inspiration: boolean
+  portraitDataUrl: string
   attacks: CharacterAttack[]
   spells: CharacterSpell[]
   inventory: string
+  inventoryItems: CharacterInventoryItem[]
+  currency: { cp: number; sp: number; ep: number; gp: number; pp: number }
   features: string
   personality: string
   ideals: string
@@ -53,6 +75,7 @@ export interface CharacterSheet {
   flaws: string
   backstory: string
   notes: string
+  sessionNotes: CharacterSessionNote[]
   updatedAt: string
 }
 
@@ -60,6 +83,7 @@ export interface CharacterLibrary {
   version: 1
   activeCharacterId: string | null
   characters: CharacterSheet[]
+  settings?: { locale: Locale }
 }
 
 export interface CharBerryAPI {
@@ -68,6 +92,9 @@ export interface CharBerryAPI {
   saveLibrarySync: (library: CharacterLibrary) => boolean
   exportLibrary: (library: CharacterLibrary) => Promise<{ success: boolean; filePath?: string; canceled?: boolean }>
   importLibrary: () => Promise<CharacterLibrary | null>
+  exportCharacterData: (defaultPath: string, data: unknown) => Promise<{ success: boolean; filePath?: string; canceled?: boolean }>
+  importCharacterData: () => Promise<unknown | null>
+  importPortrait: () => Promise<string | null>
   revealData: () => Promise<string>
   confirm: (message: string, detail?: string) => Promise<boolean>
 }
@@ -78,6 +105,9 @@ const api: CharBerryAPI = {
   saveLibrarySync: (library) => Boolean(ipcRenderer.sendSync('charberry:library-save-sync', library)),
   exportLibrary: (library) => ipcRenderer.invoke('charberry:library-export', library),
   importLibrary: () => ipcRenderer.invoke('charberry:library-import'),
+  exportCharacterData: (defaultPath, data) => ipcRenderer.invoke('charberry:character-data-export', defaultPath, data),
+  importCharacterData: () => ipcRenderer.invoke('charberry:character-data-import'),
+  importPortrait: () => ipcRenderer.invoke('charberry:portrait-import'),
   revealData: () => ipcRenderer.invoke('charberry:reveal-data'),
   confirm: (message, detail) => ipcRenderer.invoke('charberry:confirm', message, detail),
 }

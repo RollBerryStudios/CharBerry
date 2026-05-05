@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { AbilityKey, CharacterAttack, CharacterLibrary, CharacterSheet, CharacterSpell, SkillRank } from '../preload/preload'
+import type { MouseEvent } from 'react'
+import type { AbilityKey, CharacterAttack, CharacterInventoryItem, CharacterLibrary, CharacterSessionNote, CharacterSheet, CharacterSpell, Locale, SkillRank } from '../preload/preload'
 import logoUrl from '../../resources/logo.png'
+import { t, type TranslationKey } from './i18n'
+import { applySkillPicks, backgroundByName, classByName, speciesByName, SRD_BACKGROUNDS, SRD_CLASSES, SRD_SPECIES, STANDARD_ARRAY } from './rules/srd'
 
 type TabId = 'overview' | 'combat' | 'skills' | 'story' | 'notes'
 
@@ -34,13 +37,29 @@ const SKILLS: Array<{ key: string; label: string; ability: AbilityKey }> = [
   { key: 'survival', label: 'Survival', ability: 'wis' },
 ]
 
-const TABS: Array<{ id: TabId; label: string }> = [
-  { id: 'overview', label: 'Overview' },
-  { id: 'combat', label: 'Combat' },
-  { id: 'skills', label: 'Skills' },
-  { id: 'story', label: 'Story' },
-  { id: 'notes', label: 'Notes' },
+const TABS: Array<{ id: TabId; label: TranslationKey }> = [
+  { id: 'overview', label: 'overview' },
+  { id: 'combat', label: 'combat' },
+  { id: 'skills', label: 'skills' },
+  { id: 'story', label: 'story' },
+  { id: 'notes', label: 'notes' },
 ]
+
+interface CreatorDraft {
+  name: string
+  ancestry: string
+  className: string
+  background: string
+  level: number
+  abilityMethod: 'standard' | 'manual'
+}
+
+interface ContextMenuState {
+  x: number
+  y: number
+  kind: 'character' | 'inventory' | 'note'
+  id: string
+}
 
 function newId(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`
@@ -106,9 +125,12 @@ function emptyCharacter(): CharacterSheet {
     spellcastingAbility: 'cha',
     hitDice: '1d8',
     inspiration: false,
+    portraitDataUrl: '',
     attacks: [],
     spells: [],
     inventory: '',
+    inventoryItems: [],
+    currency: { cp: 0, sp: 0, ep: 0, gp: 0, pp: 0 },
     features: '',
     personality: '',
     ideals: '',
@@ -116,18 +138,109 @@ function emptyCharacter(): CharacterSheet {
     flaws: '',
     backstory: '',
     notes: '',
+    sessionNotes: [],
     updatedAt: new Date().toISOString(),
   }
 }
 
 function emptyLibrary(): CharacterLibrary {
   const character = emptyCharacter()
-  return { version: 1, activeCharacterId: character.id, characters: [character] }
+  return { version: 1, activeCharacterId: character.id, characters: [character], settings: { locale: 'en' } }
 }
 
 function numberValue(value: string, fallback = 0): number {
   const next = Number(value)
   return Number.isFinite(next) ? next : fallback
+}
+
+function moneyValue(value: string): number {
+  return Math.max(0, Math.min(999999, Math.trunc(numberValue(value, 0))))
+}
+
+function inventorySummary(items: CharacterInventoryItem[]): string {
+  return items.map((item) => `${item.quantity > 1 ? `${item.quantity}x ` : ''}${item.name}`).join(', ')
+}
+
+function totalWeight(items: CharacterInventoryItem[]): number {
+  return Math.round(items.reduce((sum, item) => sum + item.weight * item.quantity, 0) * 100) / 100
+}
+
+function totalValueText(items: CharacterInventoryItem[]): string {
+  const values = items.map((item) => item.value.trim()).filter(Boolean)
+  return values.length ? values.join(' + ') : '-'
+}
+
+function parseTags(value: string): string[] {
+  return Array.from(new Set(value.split(',').map((tag) => tag.trim()).filter(Boolean))).slice(0, 12)
+}
+
+function today(): string {
+  return new Date().toISOString().slice(0, 10)
+}
+
+function newInventoryItem(): CharacterInventoryItem {
+  return { id: newId(), name: 'New Item', quantity: 1, weight: 0, value: '', equipped: false, notes: '' }
+}
+
+function newSessionNote(): CharacterSessionNote {
+  return { id: newId(), date: today(), title: 'Session Note', body: '', tags: [] }
+}
+
+function suggestedStandardScores(primary: AbilityKey[]): Record<AbilityKey, number> {
+  const order: AbilityKey[] = [...primary, 'con', 'dex', 'wis', 'int', 'str', 'cha']
+  const unique = Array.from(new Set(order)) as AbilityKey[]
+  const scores = { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 }
+  unique.slice(0, 6).forEach((ability, index) => { scores[ability] = STANDARD_ARRAY[index] ?? 10 })
+  return scores
+}
+
+function characterFromExternal(data: unknown): CharacterSheet | null {
+  if (!data || typeof data !== 'object') return null
+  const root = data as Record<string, unknown>
+  const source = (root.character && typeof root.character === 'object' ? root.character : root) as Record<string, unknown>
+  const name = typeof source.name === 'string' ? source.name : typeof root.name === 'string' ? root.name : ''
+  if (!name.trim()) return null
+  const classes = Array.isArray(source.classes) ? source.classes as Array<Record<string, unknown>> : []
+  const firstClass = classes[0] ?? {}
+  const race = source.race && typeof source.race === 'object' ? source.race as Record<string, unknown> : {}
+  const stats = Array.isArray(source.stats) ? source.stats as Array<Record<string, unknown>> : []
+  const abilityScores = { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 }
+  const statMap: Record<number, AbilityKey> = { 1: 'str', 2: 'dex', 3: 'con', 4: 'int', 5: 'wis', 6: 'cha' }
+  for (const stat of stats) {
+    const key = statMap[Number(stat.id)]
+    const value = Number(stat.value ?? stat.overrideValue)
+    if (key && Number.isFinite(value)) abilityScores[key] = Math.max(1, Math.min(30, value))
+  }
+  const character = emptyCharacter()
+  character.name = name.trim()
+  character.ancestry = String(race.fullName ?? race.baseRaceName ?? source.ancestry ?? source.race ?? '')
+  character.className = String(firstClass.definition && typeof firstClass.definition === 'object'
+    ? (firstClass.definition as Record<string, unknown>).name ?? ''
+    : source.className ?? '')
+  character.subclass = String(firstClass.subclassDefinition && typeof firstClass.subclassDefinition === 'object'
+    ? (firstClass.subclassDefinition as Record<string, unknown>).name ?? ''
+    : source.subclass ?? '')
+  character.level = Math.max(1, Math.min(20, Number(firstClass.level ?? source.level ?? 1)))
+  character.background = String(source.background && typeof source.background === 'object'
+    ? (source.background as Record<string, unknown>).name ?? ''
+    : source.background ?? '')
+  character.abilityScores = abilityScores
+  character.inventoryItems = Array.isArray(source.inventory)
+    ? (source.inventory as Array<Record<string, unknown>>).map((item) => ({
+      id: newId(),
+      name: String(item.name ?? (item.definition && typeof item.definition === 'object' ? (item.definition as Record<string, unknown>).name ?? 'Item' : 'Item')),
+      quantity: Math.max(1, Math.min(9999, Number(item.quantity ?? 1))),
+      weight: Math.max(0, Math.min(9999, Number(item.weight ?? 0))),
+      value: String(item.value ?? ''),
+      equipped: Boolean(item.equipped),
+      notes: '',
+    }))
+    : []
+  character.inventory = inventorySummary(character.inventoryItems)
+  character.notes = typeof source.notes === 'string' ? source.notes : ''
+  character.sessionNotes = character.notes ? [{ id: newId(), date: today(), title: 'Imported notes', body: character.notes, tags: ['ddb'] }] : []
+  character.updatedAt = new Date().toISOString()
+  return character
 }
 
 export default function App() {
@@ -136,10 +249,13 @@ export default function App() {
   const [search, setSearch] = useState('')
   const [tab, setTab] = useState<TabId>('overview')
   const [toast, setToast] = useState<string | null>(null)
+  const [creatorOpen, setCreatorOpen] = useState(false)
+  const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null)
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const libraryRef = useRef(library)
 
   const activeCharacter = library.characters.find((character) => character.id === library.activeCharacterId) ?? library.characters[0]
+  const locale: Locale = library.settings?.locale ?? 'en'
 
   useEffect(() => {
     void window.charberry.loadLibrary().then((loaded) => {
@@ -207,6 +323,10 @@ export default function App() {
     }))
   }
 
+  function setLocale(locale: Locale): void {
+    setLibrary((current) => ({ ...current, settings: { ...(current.settings ?? {}), locale } }))
+  }
+
   function updateAbility(key: AbilityKey, value: number): void {
     updateActive({ abilityScores: { ...activeCharacter.abilityScores, [key]: Math.max(1, Math.min(30, value)) } })
   }
@@ -219,6 +339,22 @@ export default function App() {
     const character = emptyCharacter()
     setLibrary((current) => ({ ...current, activeCharacterId: character.id, characters: [character, ...current.characters] }))
     setTab('overview')
+  }
+
+  function duplicateCharacter(id = activeCharacter?.id): void {
+    const source = library.characters.find((character) => character.id === id)
+    if (!source) return
+    const copy: CharacterSheet = {
+      ...source,
+      id: newId(),
+      name: `${source.name} Copy`,
+      attacks: source.attacks.map((attack) => ({ ...attack, id: newId() })),
+      spells: source.spells.map((spell) => ({ ...spell, id: newId() })),
+      inventoryItems: source.inventoryItems.map((item) => ({ ...item, id: newId() })),
+      sessionNotes: source.sessionNotes.map((note) => ({ ...note, id: newId() })),
+      updatedAt: new Date().toISOString(),
+    }
+    setLibrary((current) => ({ ...current, activeCharacterId: copy.id, characters: [copy, ...current.characters] }))
   }
 
   async function deleteCharacter(): Promise<void> {
@@ -239,10 +375,45 @@ export default function App() {
         return
       }
       setLibrary(imported)
-      notify('Library imported')
+      notify(t(locale, 'libraryImported'))
     } catch {
-      notify('Import failed')
+      notify(t(locale, 'importFailed'))
     }
+  }
+
+  async function importPortrait(): Promise<void> {
+    const dataUrl = await window.charberry.importPortrait()
+    if (!dataUrl) {
+      notify(t(locale, 'portraitFailed'))
+      return
+    }
+    updateActive({ portraitDataUrl: dataUrl })
+    notify(t(locale, 'portraitImported'))
+  }
+
+  async function importDdbLikeCharacter(): Promise<void> {
+    const data = await window.charberry.importCharacterData()
+    const character = data ? characterFromExternal(data) : null
+    if (!character) {
+      notify(t(locale, 'ddbUnsupported'))
+      return
+    }
+    setLibrary((current) => ({ ...current, activeCharacterId: character.id, characters: [character, ...current.characters] }))
+    notify(t(locale, 'ddbImported'))
+  }
+
+  async function exportActiveCharacter(): Promise<void> {
+    if (!activeCharacter) return
+    await window.charberry.exportCharacterData(`${activeCharacter.name || 'character'}.charberry.json`, { version: 1, character: activeCharacter })
+  }
+
+  async function exportDdbBridge(): Promise<void> {
+    if (!activeCharacter) return
+    await window.charberry.exportCharacterData(`${activeCharacter.name || 'character'}.ddb-bridge.json`, {
+      format: 'charberry-ddb-bridge',
+      exportedAt: new Date().toISOString(),
+      character: activeCharacter,
+    })
   }
 
   function upsertAttack(id: string, patch: Partial<CharacterAttack>): void {
@@ -251,6 +422,52 @@ export default function App() {
 
   function upsertSpell(id: string, patch: Partial<CharacterSpell>): void {
     updateActive({ spells: activeCharacter.spells.map((spell) => spell.id === id ? { ...spell, ...patch } : spell) })
+  }
+
+  function updateInventoryItems(items: CharacterInventoryItem[]): void {
+    updateActive({ inventoryItems: items, inventory: inventorySummary(items) })
+  }
+
+  function upsertInventoryItem(id: string, patch: Partial<CharacterInventoryItem>): void {
+    updateInventoryItems(activeCharacter.inventoryItems.map((item) => item.id === id ? { ...item, ...patch } : item))
+  }
+
+  function updateSessionNotes(sessionNotes: CharacterSessionNote[]): void {
+    updateActive({ sessionNotes, notes: sessionNotes.map((note) => `${note.date} ${note.title}: ${note.body}`).join('\n\n') })
+  }
+
+  function upsertSessionNote(id: string, patch: Partial<CharacterSessionNote>): void {
+    updateSessionNotes(activeCharacter.sessionNotes.map((note) => note.id === id ? { ...note, ...patch } : note))
+  }
+
+  function applyCreatorTemplate(draft: CreatorDraft): void {
+    const srdClass = classByName(draft.className)
+    const species = speciesByName(draft.ancestry)
+    const background = backgroundByName(draft.background)
+    const abilityScores = draft.abilityMethod === 'standard'
+      ? suggestedStandardScores(srdClass.primary)
+      : activeCharacter.abilityScores
+    const savingThrows = { str: false, dex: false, con: false, int: false, wis: false, cha: false } as Record<AbilityKey, boolean>
+    for (const ability of srdClass.savingThrows) savingThrows[ability] = true
+    const skills = applySkillPicks(applySkillPicks(emptySkills(), srdClass.suggestedSkills), background.skills)
+    updateActive({
+      name: draft.name.trim() || activeCharacter.name,
+      ancestry: species.name,
+      className: srdClass.name,
+      background: background.name,
+      level: draft.level,
+      abilityScores,
+      savingThrows,
+      skills,
+      spellcastingAbility: srdClass.spellcastingAbility,
+      hitDice: draft.level === 1 ? srdClass.hitDie : `${draft.level}${srdClass.hitDie.slice(1)}`,
+      hpMax: Math.max(1, Number(srdClass.hitDie.replace('1d', '')) + modifier(abilityScores.con)),
+      hpCurrent: Math.max(1, Number(srdClass.hitDie.replace('1d', '')) + modifier(abilityScores.con)),
+      speed: species.speed,
+      features: [...srdClass.features, ...species.features, ...background.features].join(', '),
+    })
+    setCreatorOpen(false)
+    setTab('overview')
   }
 
   if (!ready || !activeCharacter) return <div className="loading">Loading CharBerry...</div>
@@ -266,13 +483,22 @@ export default function App() {
           <img src={logoUrl} alt="" />
           <div>
             <strong>CharBerry</strong>
-            <span>Interactive character sheets for tabletop rounds</span>
+            <span>{t(locale, 'tagline')}</span>
           </div>
         </div>
         <div className="titlebar-actions">
-          <button onClick={() => window.charberry.exportLibrary(library)}>Export</button>
-          <button onClick={importLibrary}>Import</button>
-          <button onClick={() => window.charberry.revealData()}>Data Folder</button>
+          <label className="language-select">{t(locale, 'language')}
+            <select aria-label={t(locale, 'language')} value={locale} onChange={(event) => setLocale(event.target.value as Locale)}>
+              <option value="en">English</option>
+              <option value="de">Deutsch</option>
+            </select>
+          </label>
+          <button onClick={() => setCreatorOpen(true)}>{t(locale, 'wizard')}</button>
+          <button onClick={importDdbLikeCharacter}>{t(locale, 'importDdb')}</button>
+          <button onClick={exportDdbBridge}>{t(locale, 'exportDdb')}</button>
+          <button onClick={() => window.charberry.exportLibrary(library)}>{t(locale, 'export')}</button>
+          <button onClick={importLibrary}>{t(locale, 'import')}</button>
+          <button onClick={() => window.charberry.revealData()}>{t(locale, 'dataFolder')}</button>
         </div>
       </header>
 
@@ -280,23 +506,24 @@ export default function App() {
         <aside className="roster-panel">
           <div className="panel-head">
             <div>
-              <h2>Characters</h2>
-              <p>{library.characters.length} saved sheets</p>
+              <h2>{t(locale, 'characters')}</h2>
+              <p>{library.characters.length} {t(locale, 'savedSheets')}</p>
             </div>
-            <button className="primary" onClick={addCharacter}>New</button>
+            <button className="primary" onClick={addCharacter}>{t(locale, 'new')}</button>
           </div>
-          <input aria-label="Search characters" className="search-input" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search character library" />
+          <input aria-label="Search characters" className="search-input" value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t(locale, 'searchCharacters')} />
           <div className="roster-list">
             {filteredCharacters.map((character) => (
               <button
                 key={character.id}
                 className={`roster-card ${character.id === activeCharacter.id ? 'active' : ''}`}
                 onClick={() => setLibrary((current) => ({ ...current, activeCharacterId: character.id }))}
+                onContextMenu={(event) => { event.preventDefault(); setContextMenu({ x: event.clientX, y: event.clientY, kind: 'character', id: character.id }) }}
               >
-                <span className="avatar">{character.name.slice(0, 2).toUpperCase()}</span>
+                <span className="avatar">{character.portraitDataUrl ? <img src={character.portraitDataUrl} alt="" /> : character.name.slice(0, 2).toUpperCase()}</span>
                 <span>
                   <strong>{character.name}</strong>
-                  <em>Level {character.level} {character.ancestry} {character.className}</em>
+                  <em>{t(locale, 'level')} {character.level} {character.ancestry} {character.className}</em>
                 </span>
               </button>
             ))}
@@ -305,36 +532,38 @@ export default function App() {
 
         <section className="sheet-panel">
           <div className="hero-sheet">
-            <div className="portrait">{activeCharacter.name.slice(0, 1).toUpperCase()}</div>
+            <button className="portrait" onClick={importPortrait} title={t(locale, 'setPortrait')} aria-label={t(locale, 'setPortrait')}>
+              {activeCharacter.portraitDataUrl ? <img src={activeCharacter.portraitDataUrl} alt="" /> : activeCharacter.name.slice(0, 1).toUpperCase()}
+            </button>
             <div className="identity-grid">
-              <label>Name<input value={activeCharacter.name} onChange={(event) => updateActive({ name: event.target.value })} /></label>
-              <label>Ancestry<input value={activeCharacter.ancestry} onChange={(event) => updateActive({ ancestry: event.target.value })} /></label>
-              <label>Class<input value={activeCharacter.className} onChange={(event) => updateActive({ className: event.target.value })} /></label>
-              <label>Subclass<input value={activeCharacter.subclass} onChange={(event) => updateActive({ subclass: event.target.value })} /></label>
-              <label>Level<input type="number" min={1} max={20} value={activeCharacter.level} onChange={(event) => updateActive({ level: numberValue(event.target.value, 1) })} /></label>
-              <label>Background<input value={activeCharacter.background} onChange={(event) => updateActive({ background: event.target.value })} /></label>
+              <label>{t(locale, 'name')}<input aria-label="Name" value={activeCharacter.name} onChange={(event) => updateActive({ name: event.target.value })} /></label>
+              <label>{t(locale, 'ancestry')}<input aria-label="Ancestry" value={activeCharacter.ancestry} onChange={(event) => updateActive({ ancestry: event.target.value })} /></label>
+              <label>{t(locale, 'class')}<input aria-label="Class" value={activeCharacter.className} onChange={(event) => updateActive({ className: event.target.value })} /></label>
+              <label>{t(locale, 'subclass')}<input aria-label="Subclass" value={activeCharacter.subclass} onChange={(event) => updateActive({ subclass: event.target.value })} /></label>
+              <label>{t(locale, 'level')}<input aria-label="Level" type="number" min={1} max={20} value={activeCharacter.level} onChange={(event) => updateActive({ level: numberValue(event.target.value, 1) })} /></label>
+              <label>{t(locale, 'background')}<input aria-label="Background" value={activeCharacter.background} onChange={(event) => updateActive({ background: event.target.value })} /></label>
             </div>
-            <button className="danger delete-character" disabled={library.characters.length <= 1} onClick={deleteCharacter}>Delete</button>
+            <button className="danger delete-character" disabled={library.characters.length <= 1} onClick={deleteCharacter}>{t(locale, 'delete')}</button>
           </div>
 
           <div className="derived-strip">
-            <Stat label="Proficiency" value={formatBonus(proficiency(activeCharacter.level))} />
-            <Stat label="Initiative" value={formatBonus(initiative)} />
-            <Stat label="Passive Perception" value={String(passivePerception)} />
-            <Stat label="Passive Insight" value={String(passiveInsight)} />
-            <Stat label="Spell DC" value={String(spellDc(activeCharacter))} />
-            <Stat label="Spell Attack" value={formatBonus(spellAttack(activeCharacter))} />
+            <Stat label={t(locale, 'proficiency')} value={formatBonus(proficiency(activeCharacter.level))} />
+            <Stat label={t(locale, 'initiative')} value={formatBonus(initiative)} />
+            <Stat label={t(locale, 'passivePerception')} value={String(passivePerception)} />
+            <Stat label={t(locale, 'passiveInsight')} value={String(passiveInsight)} />
+            <Stat label={t(locale, 'spellDc')} value={String(spellDc(activeCharacter))} />
+            <Stat label={t(locale, 'spellAttack')} value={formatBonus(spellAttack(activeCharacter))} />
           </div>
 
           <nav className="tabs" aria-label="Character sections">
-            {TABS.map((item) => <button key={item.id} className={tab === item.id ? 'active' : ''} onClick={() => setTab(item.id)}>{item.label}</button>)}
+            {TABS.map((item) => <button key={item.id} className={tab === item.id ? 'active' : ''} onClick={() => setTab(item.id)}>{t(locale, item.label)}</button>)}
           </nav>
 
           <div className="tab-content">
             {tab === 'overview' && (
               <div className="content-grid overview-grid">
                 <section className="card ability-card">
-                  <h2>Ability Scores</h2>
+                  <h2>{t(locale, 'abilityScores')}</h2>
                   <div className="ability-grid">
                     {ABILITIES.map((ability) => (
                       <label key={ability.key} className="ability-box">
@@ -346,17 +575,17 @@ export default function App() {
                   </div>
                 </section>
                 <section className="card quick-card">
-                  <h2>Vitals</h2>
+                  <h2>{t(locale, 'vitals')}</h2>
                   <div className="form-grid three">
-                    <label>Armor Class<input type="number" value={activeCharacter.armorClass} onChange={(event) => updateActive({ armorClass: numberValue(event.target.value, 10) })} /></label>
-                    <label>Speed<input type="number" value={activeCharacter.speed} onChange={(event) => updateActive({ speed: numberValue(event.target.value, 30) })} /></label>
-                    <label>Hit Dice<input value={activeCharacter.hitDice} onChange={(event) => updateActive({ hitDice: event.target.value })} /></label>
-                    <label>Current HP<input type="number" value={activeCharacter.hpCurrent} onChange={(event) => updateActive({ hpCurrent: numberValue(event.target.value) })} /></label>
-                    <label>Max HP<input type="number" value={activeCharacter.hpMax} onChange={(event) => updateActive({ hpMax: numberValue(event.target.value) })} /></label>
-                    <label>Temp HP<input type="number" value={activeCharacter.hpTemp} onChange={(event) => updateActive({ hpTemp: numberValue(event.target.value) })} /></label>
-                    <label>Alignment<input value={activeCharacter.alignment} onChange={(event) => updateActive({ alignment: event.target.value })} /></label>
-                    <label>XP<input type="number" value={activeCharacter.xp} onChange={(event) => updateActive({ xp: numberValue(event.target.value) })} /></label>
-                    <label className="check-line"><input type="checkbox" checked={activeCharacter.inspiration} onChange={(event) => updateActive({ inspiration: event.target.checked })} /> Inspiration</label>
+                    <label>{t(locale, 'armorClass')}<input aria-label="Armor Class" type="number" value={activeCharacter.armorClass} onChange={(event) => updateActive({ armorClass: numberValue(event.target.value, 10) })} /></label>
+                    <label>{t(locale, 'speed')}<input aria-label="Speed" type="number" value={activeCharacter.speed} onChange={(event) => updateActive({ speed: numberValue(event.target.value, 30) })} /></label>
+                    <label>{t(locale, 'hitDice')}<input aria-label="Hit Dice" value={activeCharacter.hitDice} onChange={(event) => updateActive({ hitDice: event.target.value })} /></label>
+                    <label>{t(locale, 'currentHp')}<input aria-label="Current HP" type="number" value={activeCharacter.hpCurrent} onChange={(event) => updateActive({ hpCurrent: numberValue(event.target.value) })} /></label>
+                    <label>{t(locale, 'maxHp')}<input aria-label="Max HP" type="number" value={activeCharacter.hpMax} onChange={(event) => updateActive({ hpMax: numberValue(event.target.value) })} /></label>
+                    <label>{t(locale, 'tempHp')}<input aria-label="Temp HP" type="number" value={activeCharacter.hpTemp} onChange={(event) => updateActive({ hpTemp: numberValue(event.target.value) })} /></label>
+                    <label>{t(locale, 'alignment')}<input aria-label="Alignment" value={activeCharacter.alignment} onChange={(event) => updateActive({ alignment: event.target.value })} /></label>
+                    <label>{t(locale, 'xp')}<input aria-label="XP" type="number" value={activeCharacter.xp} onChange={(event) => updateActive({ xp: numberValue(event.target.value) })} /></label>
+                    <label className="check-line"><input type="checkbox" checked={activeCharacter.inspiration} onChange={(event) => updateActive({ inspiration: event.target.checked })} /> {t(locale, 'inspiration')}</label>
                   </div>
                 </section>
               </div>
@@ -366,8 +595,8 @@ export default function App() {
               <div className="content-grid combat-grid">
                 <section className="card">
                   <div className="section-line">
-                    <h2>Attacks</h2>
-                    <button onClick={() => updateActive({ attacks: [...activeCharacter.attacks, { id: newId(), name: 'New Attack', bonus: '', damage: '', damageType: '', range: '', notes: '' }] })}>Add Attack</button>
+                    <h2>{t(locale, 'attacks')}</h2>
+                    <button onClick={() => updateActive({ attacks: [...activeCharacter.attacks, { id: newId(), name: 'New Attack', bonus: '', damage: '', damageType: '', range: '', notes: '' }] })}>{t(locale, 'addAttack')}</button>
                   </div>
                   <div className="rows">
                     {activeCharacter.attacks.map((attack) => (
@@ -383,10 +612,10 @@ export default function App() {
                 </section>
                 <section className="card">
                   <div className="section-line">
-                    <h2>Spells</h2>
-                    <button onClick={() => updateActive({ spells: [...activeCharacter.spells, { id: newId(), level: 1, name: 'New Spell', prepared: true, notes: '' }] })}>Add Spell</button>
+                    <h2>{t(locale, 'spells')}</h2>
+                    <button onClick={() => updateActive({ spells: [...activeCharacter.spells, { id: newId(), level: 1, name: 'New Spell', prepared: true, notes: '' }] })}>{t(locale, 'addSpell')}</button>
                   </div>
-                  <label>Spellcasting Ability
+                  <label>{t(locale, 'spellcastingAbility')}
                     <select value={activeCharacter.spellcastingAbility} onChange={(event) => updateActive({ spellcastingAbility: event.target.value as AbilityKey })}>
                       {ABILITIES.map((ability) => <option key={ability.key} value={ability.key}>{ability.label}</option>)}
                     </select>
@@ -396,7 +625,7 @@ export default function App() {
                       <div className="spell-row" key={spell.id}>
                         <input aria-label="Spell name" value={spell.name} onChange={(event) => upsertSpell(spell.id, { name: event.target.value })} />
                         <input aria-label="Spell level" type="number" min={0} max={9} value={spell.level} onChange={(event) => upsertSpell(spell.id, { level: numberValue(event.target.value) })} />
-                        <label className="check-line"><input type="checkbox" checked={spell.prepared} onChange={(event) => upsertSpell(spell.id, { prepared: event.target.checked })} /> Prepared</label>
+                        <label className="check-line"><input type="checkbox" checked={spell.prepared} onChange={(event) => upsertSpell(spell.id, { prepared: event.target.checked })} /> {t(locale, 'prepared')}</label>
                         <button className="icon-button danger" aria-label={`Remove ${spell.name}`} onClick={() => updateActive({ spells: activeCharacter.spells.filter((item) => item.id !== spell.id) })}>x</button>
                       </div>
                     ))}
@@ -408,7 +637,7 @@ export default function App() {
             {tab === 'skills' && (
               <div className="content-grid skills-grid">
                 <section className="card">
-                  <h2>Saving Throws</h2>
+                  <h2>{t(locale, 'savingThrows')}</h2>
                   <div className="save-grid">
                     {ABILITIES.map((ability) => (
                       <label className="save-row" key={ability.key}>
@@ -420,7 +649,7 @@ export default function App() {
                   </div>
                 </section>
                 <section className="card skill-table-card">
-                  <h2>Skills</h2>
+                  <h2>{t(locale, 'skills')}</h2>
                   <div className="skill-table">
                     {SKILLS.map((skill) => (
                       <div className="skill-row" key={skill.key}>
@@ -428,9 +657,9 @@ export default function App() {
                         <span>{skill.label}</span>
                         <em>{skill.ability.toUpperCase()}</em>
                         <select value={activeCharacter.skills[skill.key] ?? 'none'} onChange={(event) => updateSkill(skill.key, event.target.value as SkillRank)}>
-                          <option value="none">None</option>
-                          <option value="proficient">Proficient</option>
-                          <option value="expertise">Expertise</option>
+                          <option value="none">{t(locale, 'none')}</option>
+                          <option value="proficient">{t(locale, 'proficient')}</option>
+                          <option value="expertise">{t(locale, 'expertise')}</option>
                         </select>
                       </div>
                     ))}
@@ -441,24 +670,72 @@ export default function App() {
 
             {tab === 'story' && (
               <div className="content-grid story-grid">
-                <TextCard title="Personality" value={activeCharacter.personality} onChange={(value) => updateActive({ personality: value })} />
-                <TextCard title="Ideals" value={activeCharacter.ideals} onChange={(value) => updateActive({ ideals: value })} />
-                <TextCard title="Bonds" value={activeCharacter.bonds} onChange={(value) => updateActive({ bonds: value })} />
-                <TextCard title="Flaws" value={activeCharacter.flaws} onChange={(value) => updateActive({ flaws: value })} />
-                <TextCard title="Backstory" value={activeCharacter.backstory} onChange={(value) => updateActive({ backstory: value })} large />
-                <TextCard title="Features" value={activeCharacter.features} onChange={(value) => updateActive({ features: value })} large />
+                <TextCard title={t(locale, 'personality')} value={activeCharacter.personality} onChange={(value) => updateActive({ personality: value })} />
+                <TextCard title={t(locale, 'ideals')} value={activeCharacter.ideals} onChange={(value) => updateActive({ ideals: value })} />
+                <TextCard title={t(locale, 'bonds')} value={activeCharacter.bonds} onChange={(value) => updateActive({ bonds: value })} />
+                <TextCard title={t(locale, 'flaws')} value={activeCharacter.flaws} onChange={(value) => updateActive({ flaws: value })} />
+                <TextCard title={t(locale, 'backstory')} value={activeCharacter.backstory} onChange={(value) => updateActive({ backstory: value })} large />
+                <TextCard title={t(locale, 'features')} value={activeCharacter.features} onChange={(value) => updateActive({ features: value })} large />
               </div>
             )}
 
             {tab === 'notes' && (
               <div className="content-grid notes-grid">
-                <TextCard title="Inventory" value={activeCharacter.inventory} onChange={(value) => updateActive({ inventory: value })} large />
-                <TextCard title="Session Notes" value={activeCharacter.notes} onChange={(value) => updateActive({ notes: value })} large />
+                <InventoryCard
+                  locale={locale}
+                  character={activeCharacter}
+                  onCurrency={(currency) => updateActive({ currency })}
+                  onAdd={() => updateInventoryItems([...activeCharacter.inventoryItems, newInventoryItem()])}
+                  onUpdate={upsertInventoryItem}
+                  onDelete={(id) => updateInventoryItems(activeCharacter.inventoryItems.filter((item) => item.id !== id))}
+                  onContextMenu={(event, id) => { event.preventDefault(); setContextMenu({ x: event.clientX, y: event.clientY, kind: 'inventory', id }) }}
+                />
+                <SessionNotesCard
+                  locale={locale}
+                  notes={activeCharacter.sessionNotes}
+                  onAdd={() => updateSessionNotes([newSessionNote(), ...activeCharacter.sessionNotes])}
+                  onUpdate={upsertSessionNote}
+                  onDelete={(id) => updateSessionNotes(activeCharacter.sessionNotes.filter((note) => note.id !== id))}
+                  onContextMenu={(event, id) => { event.preventDefault(); setContextMenu({ x: event.clientX, y: event.clientY, kind: 'note', id }) }}
+                />
               </div>
             )}
           </div>
         </section>
       </main>
+      {creatorOpen && (
+        <CharacterCreator
+          locale={locale}
+          activeCharacter={activeCharacter}
+          onApply={applyCreatorTemplate}
+          onClose={() => setCreatorOpen(false)}
+        />
+      )}
+      {contextMenu && (
+        <ContextMenu
+          locale={locale}
+          menu={contextMenu}
+          onClose={() => setContextMenu(null)}
+          onDuplicate={() => {
+            if (contextMenu.kind === 'character') duplicateCharacter(contextMenu.id)
+            if (contextMenu.kind === 'inventory') {
+              const source = activeCharacter.inventoryItems.find((item) => item.id === contextMenu.id) ?? newInventoryItem()
+              updateInventoryItems([...activeCharacter.inventoryItems, { ...source, id: newId() }])
+            }
+            if (contextMenu.kind === 'note') {
+              const source = activeCharacter.sessionNotes.find((note) => note.id === contextMenu.id) ?? newSessionNote()
+              updateSessionNotes([{ ...source, id: newId() }, ...activeCharacter.sessionNotes])
+            }
+            setContextMenu(null)
+          }}
+          onExport={exportActiveCharacter}
+          onDelete={() => {
+            if (contextMenu.kind === 'inventory') updateInventoryItems(activeCharacter.inventoryItems.filter((item) => item.id !== contextMenu.id))
+            if (contextMenu.kind === 'note') updateSessionNotes(activeCharacter.sessionNotes.filter((note) => note.id !== contextMenu.id))
+            setContextMenu(null)
+          }}
+        />
+      )}
       {toast && <div className="toast">{toast}</div>}
     </div>
   )
@@ -474,5 +751,168 @@ function TextCard({ title, value, onChange, large = false }: { title: string; va
       <h2>{title}</h2>
       <textarea value={value} onChange={(event) => onChange(event.target.value)} />
     </section>
+  )
+}
+
+function InventoryCard({
+  locale,
+  character,
+  onCurrency,
+  onAdd,
+  onUpdate,
+  onDelete,
+  onContextMenu,
+}: {
+  locale: Locale
+  character: CharacterSheet
+  onCurrency: (currency: CharacterSheet['currency']) => void
+  onAdd: () => void
+  onUpdate: (id: string, patch: Partial<CharacterInventoryItem>) => void
+  onDelete: (id: string) => void
+  onContextMenu: (event: MouseEvent, id: string) => void
+}) {
+  return (
+    <section className="card inventory-card">
+      <div className="section-line">
+        <h2>{t(locale, 'inventory')}</h2>
+        <button onClick={onAdd}>{t(locale, 'addItem')}</button>
+      </div>
+      <div className="currency-row">
+        {(['cp', 'sp', 'ep', 'gp', 'pp'] as const).map((coin) => (
+          <label key={coin}>{coin.toUpperCase()}
+            <input type="number" value={character.currency[coin]} onChange={(event) => onCurrency({ ...character.currency, [coin]: moneyValue(event.target.value) })} />
+          </label>
+        ))}
+      </div>
+      <div className="inventory-summary">
+        <span>{t(locale, 'totalWeight')}: <strong>{totalWeight(character.inventoryItems)}</strong></span>
+        <span>{t(locale, 'totalValue')}: <strong>{totalValueText(character.inventoryItems)}</strong></span>
+      </div>
+      <div className="inventory-table">
+        {character.inventoryItems.map((item) => (
+          <div className="inventory-row" key={item.id} onContextMenu={(event) => onContextMenu(event, item.id)}>
+            <input aria-label="Item name" value={item.name} onChange={(event) => onUpdate(item.id, { name: event.target.value })} />
+            <input aria-label="Item quantity" type="number" min={1} value={item.quantity} onChange={(event) => onUpdate(item.id, { quantity: Math.max(1, numberValue(event.target.value, 1)) })} />
+            <input aria-label="Item weight" type="number" min={0} step={0.1} value={item.weight} onChange={(event) => onUpdate(item.id, { weight: Math.max(0, numberValue(event.target.value, 0)) })} />
+            <input aria-label="Item value" value={item.value} onChange={(event) => onUpdate(item.id, { value: event.target.value })} />
+            <label className="check-line"><input type="checkbox" checked={item.equipped} onChange={(event) => onUpdate(item.id, { equipped: event.target.checked })} /> {t(locale, 'equipped')}</label>
+            <input aria-label="Item notes" value={item.notes} onChange={(event) => onUpdate(item.id, { notes: event.target.value })} />
+            <button className="icon-button danger" aria-label={`Remove ${item.name}`} onClick={() => onDelete(item.id)}>x</button>
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function SessionNotesCard({
+  locale,
+  notes,
+  onAdd,
+  onUpdate,
+  onDelete,
+  onContextMenu,
+}: {
+  locale: Locale
+  notes: CharacterSessionNote[]
+  onAdd: () => void
+  onUpdate: (id: string, patch: Partial<CharacterSessionNote>) => void
+  onDelete: (id: string) => void
+  onContextMenu: (event: MouseEvent, id: string) => void
+}) {
+  return (
+    <section className="card session-card">
+      <div className="section-line">
+        <h2>{t(locale, 'sessionNotes')}</h2>
+        <button onClick={onAdd}>{t(locale, 'addNote')}</button>
+      </div>
+      <div className="session-list">
+        {notes.map((note) => (
+          <div className="session-note" key={note.id} onContextMenu={(event) => onContextMenu(event, note.id)}>
+            <div className="session-meta">
+              <label>{t(locale, 'date')}<input type="date" value={note.date} onChange={(event) => onUpdate(note.id, { date: event.target.value })} /></label>
+              <label>{t(locale, 'title')}<input aria-label="Session note title" value={note.title} onChange={(event) => onUpdate(note.id, { title: event.target.value })} /></label>
+              <label>{t(locale, 'tags')}<input aria-label="Session note tags" value={note.tags.join(', ')} onChange={(event) => onUpdate(note.id, { tags: parseTags(event.target.value) })} /></label>
+              <button className="icon-button danger" aria-label={`Remove ${note.title}`} onClick={() => onDelete(note.id)}>x</button>
+            </div>
+            <textarea aria-label="Session note body" value={note.body} onChange={(event) => onUpdate(note.id, { body: event.target.value })} />
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function CharacterCreator({ locale, activeCharacter, onApply, onClose }: { locale: Locale; activeCharacter: CharacterSheet; onApply: (draft: CreatorDraft) => void; onClose: () => void }) {
+  const [draft, setDraft] = useState<CreatorDraft>({
+    name: activeCharacter.name,
+    ancestry: activeCharacter.ancestry || SRD_SPECIES[0].name,
+    className: activeCharacter.className || SRD_CLASSES[4].name,
+    background: activeCharacter.background || SRD_BACKGROUNDS[0].name,
+    level: activeCharacter.level,
+    abilityMethod: 'standard',
+  })
+  const pickedClass = classByName(draft.className)
+  const pickedSpecies = speciesByName(draft.ancestry)
+  const pickedBackground = backgroundByName(draft.background)
+  return (
+    <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={t(locale, 'characterCreator')}>
+      <section className="wizard-modal">
+        <div className="section-line">
+          <h2>{t(locale, 'characterCreator')}</h2>
+          <button onClick={onClose}>{t(locale, 'close')}</button>
+        </div>
+        <div className="wizard-grid">
+          <label>{t(locale, 'name')}<input value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} /></label>
+          <label>{t(locale, 'ancestry')}
+            <select value={draft.ancestry} onChange={(event) => setDraft({ ...draft, ancestry: event.target.value })}>
+              {SRD_SPECIES.map((item) => <option key={item.name} value={item.name}>{item.name}</option>)}
+            </select>
+          </label>
+          <label>{t(locale, 'class')}
+            <select value={draft.className} onChange={(event) => setDraft({ ...draft, className: event.target.value })}>
+              {SRD_CLASSES.map((item) => <option key={item.name} value={item.name}>{item.name}</option>)}
+            </select>
+          </label>
+          <label>{t(locale, 'background')}
+            <select value={draft.background} onChange={(event) => setDraft({ ...draft, background: event.target.value })}>
+              {SRD_BACKGROUNDS.map((item) => <option key={item.name} value={item.name}>{item.name}</option>)}
+            </select>
+          </label>
+          <label>{t(locale, 'level')}<input type="number" min={1} max={20} value={draft.level} onChange={(event) => setDraft({ ...draft, level: Math.max(1, Math.min(20, numberValue(event.target.value, 1))) })} /></label>
+          <label>{t(locale, 'abilityMethod')}
+            <select value={draft.abilityMethod} onChange={(event) => setDraft({ ...draft, abilityMethod: event.target.value as CreatorDraft['abilityMethod'] })}>
+              <option value="standard">{t(locale, 'standardArray')}</option>
+              <option value="manual">{t(locale, 'manual')}</option>
+            </select>
+          </label>
+        </div>
+        <div className="wizard-preview">
+          <span>{pickedClass.hitDie}</span>
+          <span>{pickedSpecies.speed} ft</span>
+          <span>{[...pickedClass.features, ...pickedSpecies.features, ...pickedBackground.features].join(', ')}</span>
+        </div>
+        <button className="primary wizard-apply" onClick={() => onApply(draft)}>{t(locale, 'applyTemplate')}</button>
+      </section>
+    </div>
+  )
+}
+
+function ContextMenu({ locale, menu, onClose, onDuplicate, onExport, onDelete }: {
+  locale: Locale
+  menu: ContextMenuState
+  onClose: () => void
+  onDuplicate: () => void
+  onExport: () => void
+  onDelete: () => void
+}) {
+  return (
+    <div className="context-scrim" onClick={onClose}>
+      <div className="context-menu" style={{ left: menu.x, top: menu.y }} role="menu" aria-label={t(locale, 'actionMenu')} onClick={(event) => event.stopPropagation()}>
+        <button onClick={onDuplicate}>{t(locale, 'duplicate')}</button>
+        {menu.kind === 'character' && <button onClick={() => { void onExport(); onClose() }}>{t(locale, 'exportCharacter')}</button>}
+        {menu.kind !== 'character' && <button className="danger" onClick={onDelete}>{t(locale, 'delete')}</button>}
+      </div>
+    </div>
   )
 }

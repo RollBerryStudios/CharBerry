@@ -1,9 +1,10 @@
 import { app, BrowserWindow, dialog, ipcMain, shell, session, type IpcMainInvokeEvent, type MessageBoxOptions, type OpenDialogOptions } from 'electron'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
-import { join, resolve } from 'path'
+import { extname, join, resolve } from 'path'
 
 type AbilityKey = 'str' | 'dex' | 'con' | 'int' | 'wis' | 'cha'
 type SkillRank = 'none' | 'proficient' | 'expertise'
+type Locale = 'en' | 'de'
 
 interface CharacterAttack {
   id: string
@@ -21,6 +22,24 @@ interface CharacterSpell {
   name: string
   prepared: boolean
   notes: string
+}
+
+interface CharacterInventoryItem {
+  id: string
+  name: string
+  quantity: number
+  weight: number
+  value: string
+  equipped: boolean
+  notes: string
+}
+
+interface CharacterSessionNote {
+  id: string
+  date: string
+  title: string
+  body: string
+  tags: string[]
 }
 
 interface CharacterSheet {
@@ -45,9 +64,12 @@ interface CharacterSheet {
   spellcastingAbility: AbilityKey
   hitDice: string
   inspiration: boolean
+  portraitDataUrl: string
   attacks: CharacterAttack[]
   spells: CharacterSpell[]
   inventory: string
+  inventoryItems: CharacterInventoryItem[]
+  currency: { cp: number; sp: number; ep: number; gp: number; pp: number }
   features: string
   personality: string
   ideals: string
@@ -55,6 +77,7 @@ interface CharacterSheet {
   flaws: string
   backstory: string
   notes: string
+  sessionNotes: CharacterSessionNote[]
   updatedAt: string
 }
 
@@ -62,6 +85,7 @@ interface CharacterLibrary {
   version: 1
   activeCharacterId: string | null
   characters: CharacterSheet[]
+  settings?: { locale: Locale }
 }
 
 const isDev = process.env.NODE_ENV === 'development'
@@ -133,6 +157,26 @@ function skillRank(value: unknown): SkillRank {
   return value === 'proficient' || value === 'expertise' ? value : 'none'
 }
 
+function locale(value: unknown): Locale {
+  return value === 'de' ? 'de' : 'en'
+}
+
+function money(value: unknown): { cp: number; sp: number; ep: number; gp: number; pp: number } {
+  const parsed = value && typeof value === 'object' ? value as Partial<Record<'cp' | 'sp' | 'ep' | 'gp' | 'pp', number>> : {}
+  return {
+    cp: clampInt(parsed.cp, 0, 999_999, 0),
+    sp: clampInt(parsed.sp, 0, 999_999, 0),
+    ep: clampInt(parsed.ep, 0, 999_999, 0),
+    gp: clampInt(parsed.gp, 0, 999_999, 0),
+    pp: clampInt(parsed.pp, 0, 999_999, 0),
+  }
+}
+
+function tags(value: unknown): string[] {
+  if (!Array.isArray(value)) return []
+  return Array.from(new Set(value.filter((tag) => typeof tag === 'string').map((tag) => tag.trim()).filter(Boolean))).slice(0, 12)
+}
+
 function skills(value: unknown): Record<string, SkillRank> {
   const parsed = value && typeof value === 'object' ? value as Record<string, unknown> : {}
   const keys = [
@@ -169,6 +213,50 @@ function normalizeSpell(value: unknown): CharacterSpell | null {
   }
 }
 
+function normalizeInventoryItem(value: unknown): CharacterInventoryItem | null {
+  if (!value || typeof value !== 'object') return null
+  const parsed = value as Partial<CharacterInventoryItem>
+  const name = text(parsed.name).trim()
+  if (!name) return null
+  return {
+    id: text(parsed.id, makeId()),
+    name,
+    quantity: clampInt(parsed.quantity, 1, 9999, 1),
+    weight: typeof parsed.weight === 'number' && Number.isFinite(parsed.weight) ? Math.max(0, Math.min(9999, parsed.weight)) : 0,
+    value: text(parsed.value),
+    equipped: Boolean(parsed.equipped),
+    notes: text(parsed.notes),
+  }
+}
+
+function legacyInventoryItems(value: unknown): CharacterInventoryItem[] {
+  const raw = text(value).trim()
+  if (!raw) return []
+  return raw.split(/[,;\n]/)
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .slice(0, 80)
+    .map((name) => ({ id: makeId(), name, quantity: 1, weight: 0, value: '', equipped: false, notes: '' }))
+}
+
+function normalizeSessionNote(value: unknown): CharacterSessionNote | null {
+  if (!value || typeof value !== 'object') return null
+  const parsed = value as Partial<CharacterSessionNote>
+  return {
+    id: text(parsed.id, makeId()),
+    date: text(parsed.date, new Date().toISOString().slice(0, 10)),
+    title: text(parsed.title, 'Session Note').trim() || 'Session Note',
+    body: text(parsed.body),
+    tags: tags(parsed.tags),
+  }
+}
+
+function legacySessionNotes(value: unknown): CharacterSessionNote[] {
+  const body = text(value).trim()
+  if (!body) return []
+  return [{ id: makeId(), date: new Date().toISOString().slice(0, 10), title: 'Imported notes', body, tags: ['legacy'] }]
+}
+
 function emptyCharacter(): CharacterSheet {
   const now = new Date().toISOString()
   return {
@@ -193,9 +281,16 @@ function emptyCharacter(): CharacterSheet {
     spellcastingAbility: 'cha',
     hitDice: '1d10',
     inspiration: false,
+    portraitDataUrl: '',
     attacks: [{ id: makeId(), name: 'Longsword', bonus: '+4', damage: '1d8+2', damageType: 'slashing', range: '5 ft', notes: '' }],
     spells: [],
     inventory: 'Explorer pack, shield, longsword',
+    inventoryItems: [
+      { id: makeId(), name: 'Explorer pack', quantity: 1, weight: 59, value: '10 gp', equipped: false, notes: '' },
+      { id: makeId(), name: 'Shield', quantity: 1, weight: 6, value: '10 gp', equipped: true, notes: '+2 AC when equipped' },
+      { id: makeId(), name: 'Longsword', quantity: 1, weight: 3, value: '15 gp', equipped: true, notes: '' },
+    ],
+    currency: { cp: 0, sp: 0, ep: 0, gp: 15, pp: 0 },
     features: 'Fighting Style, Second Wind',
     personality: '',
     ideals: '',
@@ -203,6 +298,7 @@ function emptyCharacter(): CharacterSheet {
     flaws: '',
     backstory: '',
     notes: '',
+    sessionNotes: [],
     updatedAt: now,
   }
 }
@@ -236,9 +332,14 @@ function normalizeCharacter(value: unknown): CharacterSheet | null {
     spellcastingAbility: activeAbility,
     hitDice: text(parsed.hitDice),
     inspiration: Boolean(parsed.inspiration),
+    portraitDataUrl: text(parsed.portraitDataUrl),
     attacks: Array.isArray(parsed.attacks) ? parsed.attacks.map(normalizeAttack).filter(Boolean) as CharacterAttack[] : [],
     spells: Array.isArray(parsed.spells) ? parsed.spells.map(normalizeSpell).filter(Boolean) as CharacterSpell[] : [],
     inventory: text(parsed.inventory),
+    inventoryItems: Array.isArray(parsed.inventoryItems)
+      ? parsed.inventoryItems.map(normalizeInventoryItem).filter(Boolean) as CharacterInventoryItem[]
+      : legacyInventoryItems(parsed.inventory),
+    currency: money(parsed.currency),
     features: text(parsed.features),
     personality: text(parsed.personality),
     ideals: text(parsed.ideals),
@@ -246,6 +347,9 @@ function normalizeCharacter(value: unknown): CharacterSheet | null {
     flaws: text(parsed.flaws),
     backstory: text(parsed.backstory),
     notes: text(parsed.notes),
+    sessionNotes: Array.isArray(parsed.sessionNotes)
+      ? parsed.sessionNotes.map(normalizeSessionNote).filter(Boolean) as CharacterSessionNote[]
+      : legacySessionNotes(parsed.notes),
     updatedAt: text(parsed.updatedAt, new Date().toISOString()),
   }
 }
@@ -266,16 +370,16 @@ function defaultLibrary(): CharacterLibrary {
   character.spellcastingAbility = 'wis'
   character.hitDice = '5d10'
   character.attacks = [
-    { id: makeId(), name: 'Longbow', bonus: '+7', damage: '1d8+4', damageType: 'piercing', range: '150/600', notes: 'Favored ambush opener.' },
+    { id: makeId(), name: 'Longbow', bonus: '+7', damage: '1d8+4', damageType: 'piercing', range: '150/600', notes: 'Ambush opener.' },
     { id: makeId(), name: 'Shortsword', bonus: '+7', damage: '1d6+4', damageType: 'piercing', range: '5 ft', notes: '' },
   ]
   character.spells = [
     { id: makeId(), level: 1, name: 'Hunter mark', prepared: true, notes: 'Bonus action concentration.' },
     { id: makeId(), level: 2, name: 'Pass without trace', prepared: true, notes: '+10 stealth aura.' },
   ]
-  character.features = 'Favored Foe, Natural Explorer, Extra Attack'
+  character.features = 'Favored Enemy, Natural Explorer, Extra Attack'
   character.notes = 'Tracks enemy movement and carries party navigation details.'
-  return { version: 1, activeCharacterId: character.id, characters: [character] }
+  return { version: 1, activeCharacterId: character.id, characters: [character], settings: { locale: 'en' } }
 }
 
 function normalizeLibrary(value: unknown): CharacterLibrary {
@@ -289,7 +393,7 @@ function normalizeLibrary(value: unknown): CharacterLibrary {
   const activeCharacterId = typeof parsed.activeCharacterId === 'string' && characters.some((character) => character.id === parsed.activeCharacterId)
     ? parsed.activeCharacterId
     : characters[0].id
-  return { version: 1, characters, activeCharacterId }
+  return { version: 1, characters, activeCharacterId, settings: { locale: locale(parsed.settings?.locale) } }
 }
 
 function loadLibrary(): CharacterLibrary {
@@ -311,6 +415,13 @@ function saveLibrary(library: CharacterLibrary): boolean {
 
 function ownerWindow(event: IpcMainInvokeEvent): BrowserWindow | null {
   return BrowserWindow.fromWebContents(event.sender) ?? mainWindow
+}
+
+function imageMime(path: string): string {
+  const ext = extname(path).toLowerCase()
+  if (ext === '.jpg' || ext === '.jpeg') return 'image/jpeg'
+  if (ext === '.webp') return 'image/webp'
+  return 'image/png'
 }
 
 function registerIpc(): void {
@@ -346,6 +457,50 @@ function registerIpc(): void {
     if (result.canceled || !result.filePaths[0]) return null
     try {
       return normalizeLibrary(JSON.parse(readFileSync(result.filePaths[0], 'utf8')))
+    } catch {
+      return null
+    }
+  })
+  ipcMain.handle('charberry:character-data-export', async (event, defaultPath: string, data: unknown) => {
+    const options = {
+      title: 'Export character data',
+      defaultPath: defaultPath || 'charberry-character.json',
+      filters: [{ name: 'Character Data', extensions: ['json'] }],
+    }
+    const owner = ownerWindow(event)
+    const result = owner ? await dialog.showSaveDialog(owner, options) : await dialog.showSaveDialog(options)
+    if (result.canceled || !result.filePath) return { canceled: true, success: false }
+    writeFileSync(result.filePath, JSON.stringify(data, null, 2), 'utf8')
+    return { success: true, filePath: result.filePath }
+  })
+  ipcMain.handle('charberry:character-data-import', async (event) => {
+    const options = {
+      title: 'Import character data',
+      properties: ['openFile'],
+      filters: [{ name: 'Character JSON', extensions: ['json'] }],
+    } as OpenDialogOptions
+    const owner = ownerWindow(event)
+    const result = owner ? await dialog.showOpenDialog(owner, options) : await dialog.showOpenDialog(options)
+    if (result.canceled || !result.filePaths[0]) return null
+    try {
+      return JSON.parse(readFileSync(result.filePaths[0], 'utf8')) as unknown
+    } catch {
+      return null
+    }
+  })
+  ipcMain.handle('charberry:portrait-import', async (event) => {
+    const options = {
+      title: 'Import character portrait',
+      properties: ['openFile'],
+      filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'webp'] }],
+    } as OpenDialogOptions
+    const owner = ownerWindow(event)
+    const result = owner ? await dialog.showOpenDialog(owner, options) : await dialog.showOpenDialog(options)
+    if (result.canceled || !result.filePaths[0]) return null
+    try {
+      const filePath = result.filePaths[0]
+      const data = readFileSync(filePath)
+      return `data:${imageMime(filePath)};base64,${data.toString('base64')}`
     } catch {
       return null
     }
