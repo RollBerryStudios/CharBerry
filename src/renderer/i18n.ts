@@ -1,7 +1,7 @@
 export type Locale = 'en' | 'de'
 
 type Key =
-  | 'tagline' | 'export' | 'import' | 'dataFolder' | 'language' | 'characters' | 'savedSheets'
+  | 'tagline' | 'export' | 'import' | 'dataFolder' | 'dataActions' | 'language' | 'characters' | 'savedSheets'
   | 'new' | 'wizard' | 'searchCharacters' | 'delete' | 'duplicate' | 'exportCharacter'
   | 'importDdb' | 'exportDdb' | 'setPortrait' | 'removePortrait' | 'overview' | 'combat'
   | 'skills' | 'story' | 'notes' | 'name' | 'ancestry' | 'class' | 'subclass' | 'level'
@@ -24,6 +24,7 @@ const EN: Record<Key, string> = {
   export: 'Export',
   import: 'Import',
   dataFolder: 'Data Folder',
+  dataActions: 'Data',
   language: 'Language',
   characters: 'Characters',
   savedSheets: 'saved sheets',
@@ -119,6 +120,7 @@ const DE: Record<Key, string> = {
   export: 'Exportieren',
   import: 'Importieren',
   dataFolder: 'Datenordner',
+  dataActions: 'Daten',
   language: 'Sprache',
   characters: 'Charaktere',
   savedSheets: 'gespeicherte Bögen',

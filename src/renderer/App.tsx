@@ -494,11 +494,16 @@ export default function App() {
             </select>
           </label>
           <button onClick={() => setCreatorOpen(true)}>{t(locale, 'wizard')}</button>
-          <button onClick={importDdbLikeCharacter}>{t(locale, 'importDdb')}</button>
-          <button onClick={exportDdbBridge}>{t(locale, 'exportDdb')}</button>
-          <button onClick={() => window.charberry.exportLibrary(library)}>{t(locale, 'export')}</button>
-          <button onClick={importLibrary}>{t(locale, 'import')}</button>
-          <button onClick={() => window.charberry.revealData()}>{t(locale, 'dataFolder')}</button>
+          <details className="action-menu">
+            <summary>{t(locale, 'dataActions')}</summary>
+            <div>
+              <button onClick={importDdbLikeCharacter}>{t(locale, 'importDdb')}</button>
+              <button onClick={exportDdbBridge}>{t(locale, 'exportDdb')}</button>
+              <button onClick={() => window.charberry.exportLibrary(library)}>{t(locale, 'export')}</button>
+              <button onClick={importLibrary}>{t(locale, 'import')}</button>
+              <button onClick={() => window.charberry.revealData()}>{t(locale, 'dataFolder')}</button>
+            </div>
+          </details>
         </div>
       </header>
 

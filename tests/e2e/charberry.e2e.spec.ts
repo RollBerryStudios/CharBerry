@@ -274,6 +274,10 @@ test.describe('CharBerry Electron QA', () => {
       await page.getByLabel('Language').selectOption('de')
       await expect(page.getByRole('heading', { name: 'Charaktere' })).toBeVisible()
       await expect(page.getByRole('button', { name: 'Assistent' })).toBeVisible()
+      await page.locator('.action-menu summary').click()
+      await expect(page.getByRole('button', { name: 'DDB-JSON importieren' })).toBeVisible()
+      await expect(page.getByRole('button', { name: 'Bridge-JSON exportieren' })).toBeVisible()
+      await page.locator('.action-menu summary').click()
       await page.getByRole('button', { name: 'Assistent' }).click()
       await expect(page.getByRole('dialog', { name: 'Charakter-Assistent' })).toBeVisible()
       await page.getByRole('dialog').locator('select').nth(1).selectOption('Wizard')
@@ -357,6 +361,7 @@ async function assertVisibleLayout(page: import('@playwright/test').Page): Promi
       for (const element of Array.from(document.querySelectorAll(selector))) {
         if (seen.has(element)) continue
         seen.add(element)
+        if (element.closest('details:not([open])')) continue
         const style = window.getComputedStyle(element)
         if (style.display === 'none' || style.visibility === 'hidden') continue
         const rect = element.getBoundingClientRect()
