@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { launchCharBerry, readSavedLibrary, sampleLibrary } from './helpers/charberryApp'
+import { launchCharBerry, readSavedLibrary, sampleLibrary, type CharacterLibrary } from './helpers/charberryApp'
 
 test.describe('CharBerry Electron QA', () => {
   test('renders the character library and responsive sheet without broken controls', async ({}, testInfo) => {
@@ -13,7 +13,64 @@ test.describe('CharBerry Electron QA', () => {
       await expect(page.getByText('Passive Perception')).toBeVisible()
       await expect(page.getByText('Spell DC')).toBeVisible()
       await expect(page.locator('.ability-box')).toHaveCount(6)
+      await expect.poll(() => page.locator('.brand img').evaluate((img) => (img as HTMLImageElement).naturalWidth)).toBeGreaterThan(0)
+      await assertVisibleLayout(page)
+      await assertNoUnexpectedOverlaps(page)
       await expect(page).toHaveScreenshot('charberry-character-overview.png', { fullPage: true })
+    } finally {
+      await app.close()
+    }
+  })
+
+  test('covers every sheet tab with stable desktop screenshots and no layout collisions', async ({}, testInfo) => {
+    const { app, page } = await launchCharBerry(testInfo)
+    try {
+      const tabs = ['Overview', 'Combat', 'Skills', 'Story', 'Notes']
+      for (const tab of tabs) {
+        await page.getByRole('button', { name: tab }).click()
+        await assertVisibleLayout(page)
+        await assertNoUnexpectedOverlaps(page)
+        await expect(page).toHaveScreenshot(`charberry-tab-${tab.toLowerCase()}-desktop.png`, { fullPage: true })
+      }
+
+      await page.getByRole('button', { name: 'Combat' }).click()
+      await expect(page.getByRole('heading', { name: 'Attacks' })).toBeVisible()
+      await expect(page.getByRole('heading', { name: 'Spells' })).toBeVisible()
+      await page.getByRole('button', { name: 'Skills' }).click()
+      await expect(page.locator('.save-row')).toHaveCount(6)
+      await expect(page.locator('.skill-row')).toHaveCount(18)
+      await page.getByRole('button', { name: 'Notes' }).click()
+      await expect(page.getByRole('heading', { name: 'Inventory' })).toBeVisible()
+      await expect(page.getByRole('heading', { name: 'Session Notes' })).toBeVisible()
+    } finally {
+      await app.close()
+    }
+  })
+
+  test('searches and switches a larger character roster without losing active sheet state', async ({}, testInfo) => {
+    const library = multiCharacterLibrary()
+    const { app, page, libraryPath } = await launchCharBerry(testInfo, { library })
+    try {
+      await expect(page.locator('.roster-card')).toHaveCount(3)
+      await page.getByLabel('Search characters').fill('cleric')
+      await expect(page.locator('.roster-card')).toHaveCount(1)
+      await expect(page.locator('.roster-card')).toContainText('Brother Caldus')
+      await page.locator('.roster-card', { hasText: 'Brother Caldus' }).click()
+      await expect(page.getByRole('textbox', { name: 'Name' })).toHaveValue('Brother Caldus')
+      await expect(page.getByLabel('Class', { exact: true })).toHaveValue('Cleric')
+
+      await page.getByLabel('Search characters').fill('')
+      await page.locator('.roster-card', { hasText: 'Mira Vale' }).click()
+      await expect(page.getByRole('textbox', { name: 'Name' })).toHaveValue('Mira Vale')
+      await page.getByLabel('Level', { exact: true }).fill('7')
+
+      await expect.poll(() => {
+        const saved = readSavedLibrary(libraryPath)
+        return {
+          active: saved.characters.find((character) => character.id === saved.activeCharacterId)?.name,
+          miraLevel: saved.characters.find((character) => character.id === 'char-mira')?.level,
+        }
+      }).toEqual({ active: 'Mira Vale', miraLevel: 7 })
     } finally {
       await app.close()
     }
@@ -80,6 +137,65 @@ test.describe('CharBerry Electron QA', () => {
     }
   })
 
+  test('edits story, notes, vitals, inspiration, saving throws, and spellcasting ability', async ({}, testInfo) => {
+    const { app, page, libraryPath } = await launchCharBerry(testInfo)
+    try {
+      await page.getByLabel('Armor Class').fill('18')
+      await page.getByLabel('Current HP').fill('31')
+      await page.getByLabel('Temp HP').fill('6')
+      await page.locator('.quick-card .check-line input').check()
+
+      await page.getByRole('button', { name: 'Combat' }).click()
+      await page.getByLabel('Spellcasting Ability').selectOption('int')
+      await expect(page.locator('.stat', { hasText: 'Spell DC' })).toContainText('12')
+      await expect(page.locator('.stat', { hasText: 'Spell Attack' })).toContainText('+4')
+
+      await page.getByRole('button', { name: 'Skills' }).click()
+      await page.locator('.save-row', { hasText: 'WIS' }).locator('input').check()
+      await expect(page.locator('.save-row', { hasText: 'WIS' })).toContainText('+6')
+
+      await page.getByRole('button', { name: 'Story' }).click()
+      await page.locator('.text-card', { hasText: 'Personality' }).locator('textarea').fill('Speaks softly before drawing a blade.')
+      await page.locator('.text-card', { hasText: 'Backstory' }).locator('textarea').fill('Raised in a border fort with maps on every wall.')
+      await page.locator('.text-card', { hasText: 'Features' }).locator('textarea').fill('Favored Foe, Natural Explorer, Extra Attack, Field Notes')
+      await assertVisibleLayout(page)
+      await assertNoUnexpectedOverlaps(page)
+      await expect(page).toHaveScreenshot('charberry-story-edited-desktop.png', { fullPage: true })
+
+      await page.getByRole('button', { name: 'Notes' }).click()
+      await page.locator('.text-card', { hasText: 'Inventory' }).locator('textarea').fill('Moonlit compass, rope, field journal')
+      await page.locator('.text-card', { hasText: 'Session Notes' }).locator('textarea').fill('Ask the smith about the ash-covered arrowheads.')
+      await expect(page).toHaveScreenshot('charberry-notes-edited-desktop.png', { fullPage: true })
+
+      await expect.poll(() => {
+        const active = readSavedLibrary(libraryPath).characters[0]
+        return {
+          ac: active.armorClass,
+          currentHp: active.hpCurrent,
+          tempHp: active.hpTemp,
+          inspiration: active.inspiration,
+          spellAbility: active.spellcastingAbility,
+          wisSave: active.savingThrows.wis,
+          personality: active.personality,
+          inventory: active.inventory,
+          notes: active.notes,
+        }
+      }).toEqual({
+        ac: 18,
+        currentHp: 31,
+        tempHp: 6,
+        inspiration: true,
+        spellAbility: 'int',
+        wisSave: true,
+        personality: 'Speaks softly before drawing a blade.',
+        inventory: 'Moonlit compass, rope, field journal',
+        notes: 'Ask the smith about the ash-covered arrowheads.',
+      })
+    } finally {
+      await app.close()
+    }
+  })
+
   test('normalizes damaged data before rendering and saving', async ({}, testInfo) => {
     const damaged = {
       version: 1,
@@ -123,12 +239,52 @@ test.describe('CharBerry Electron QA', () => {
       await page.setViewportSize({ width: 900, height: 980 })
       await page.waitForTimeout(100)
       await assertVisibleLayout(page)
+      await assertNoUnexpectedOverlaps(page)
       await expect(page).toHaveScreenshot('charberry-responsive.png', { fullPage: true })
+
+      await page.getByRole('button', { name: 'Combat' }).click()
+      await assertVisibleLayout(page)
+      await assertNoUnexpectedOverlaps(page)
+      await expect(page).toHaveScreenshot('charberry-combat-responsive.png', { fullPage: true })
     } finally {
       await app.close()
     }
   })
 })
+
+function multiCharacterLibrary(): CharacterLibrary {
+  const base = sampleLibrary()
+  return {
+    ...base,
+    characters: [
+      base.characters[0],
+      {
+        ...base.characters[0],
+        id: 'char-mira',
+        name: 'Mira Vale',
+        ancestry: 'Human',
+        className: 'Wizard',
+        subclass: 'Scribe',
+        level: 4,
+        background: 'Sage',
+        abilityScores: { str: 8, dex: 14, con: 12, int: 18, wis: 13, cha: 10 },
+        spellcastingAbility: 'int',
+      },
+      {
+        ...base.characters[0],
+        id: 'char-caldus',
+        name: 'Brother Caldus',
+        ancestry: 'Dwarf',
+        className: 'Cleric',
+        subclass: 'Forge Domain',
+        level: 6,
+        background: 'Guild Artisan',
+        abilityScores: { str: 14, dex: 10, con: 16, int: 11, wis: 18, cha: 12 },
+        spellcastingAbility: 'wis',
+      },
+    ],
+  }
+}
 
 async function assertVisibleLayout(page: import('@playwright/test').Page): Promise<void> {
   const failures = await page.evaluate(() => {
@@ -146,6 +302,53 @@ async function assertVisibleLayout(page: import('@playwright/test').Page): Promi
         if (rect.width <= 0 || rect.height <= 0) result.push(`${selector} has empty bounds`)
         if (rect.left < -1 || rect.right > viewport.width + 1) result.push(`${selector} overflows horizontally`)
         if (element instanceof HTMLButtonElement && element.scrollWidth > element.clientWidth + 2) result.push(`button text clips: ${element.textContent?.trim()}`)
+      }
+    }
+    return result
+  })
+  expect(failures).toEqual([])
+}
+
+async function assertNoUnexpectedOverlaps(page: import('@playwright/test').Page): Promise<void> {
+  const failures = await page.evaluate(() => {
+    const groups = [
+      '.titlebar > *',
+      '.derived-strip > .stat',
+      '.tabs > button',
+      '.overview-grid > .card',
+      '.combat-grid > .card',
+      '.skills-grid > .card',
+      '.story-grid > .card',
+      '.notes-grid > .card',
+      '.identity-grid > label',
+      '.form-grid > label',
+      '.ability-grid > .ability-box',
+      '.skill-table > .skill-row',
+      '.save-grid > .save-row',
+      '.attack-row > *',
+      '.spell-row > *',
+    ]
+    const result: string[] = []
+    function visibleRect(element: Element): DOMRect | null {
+      const style = window.getComputedStyle(element)
+      if (style.display === 'none' || style.visibility === 'hidden') return null
+      const rect = element.getBoundingClientRect()
+      if (rect.width <= 0 || rect.height <= 0) return null
+      return rect
+    }
+    function overlap(a: DOMRect, b: DOMRect): boolean {
+      return Math.max(a.left, b.left) < Math.min(a.right, b.right) - 1 && Math.max(a.top, b.top) < Math.min(a.bottom, b.bottom) - 1
+    }
+    for (const group of groups) {
+      const items = Array.from(document.querySelectorAll(group))
+        .map((element) => ({ element, rect: visibleRect(element) }))
+        .filter((item): item is { element: Element; rect: DOMRect } => item.rect !== null)
+      for (let i = 0; i < items.length; i++) {
+        for (let j = i + 1; j < items.length; j++) {
+          if (overlap(items[i].rect, items[j].rect)) {
+            result.push(`${group} overlap: "${items[i].element.textContent?.trim().slice(0, 30)}" with "${items[j].element.textContent?.trim().slice(0, 30)}"`)
+          }
+        }
       }
     }
     return result
