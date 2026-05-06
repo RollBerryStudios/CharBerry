@@ -5,7 +5,7 @@
 <h1 align="center">CharBerry</h1>
 
 <p align="center">
-  <strong>Lokale Charakterboegen fuer Pen-&amp;-Paper-Runden</strong><br>
+  <strong>Lokale Charakterbögen für Pen-&amp;-Paper-Runden</strong><br>
   <em>Local-first character sheets for tabletop RPG sessions</em>
 </p>
 
@@ -26,19 +26,19 @@
 
 ## Deutsch
 
-CharBerry ist eine **kostenlose, lokale Desktop-App fuer interaktive
-Tabletop-Charakterboegen**. Sie ist fuer Gruppen gedacht, die keinen kompletten
+CharBerry ist eine **kostenlose, lokale Desktop-App für interaktive
+Tabletop-Charakterbögen**. Sie ist für Gruppen gedacht, die keinen kompletten
 VTT brauchen oder bereits mit analoger Karte, anderem VTT oder leichtem
 Online-Setup spielen.
 
 - **Standalone statt Kampagnen-Suite** - Charakterverwaltung ohne BoltBerry-Projekt
 - **Interaktiver Charakterbogen** - Werte schnell bearbeiten, abgeleitete Werte automatisch sehen
-- **SRD-Starter** - gefuehrter Start-Workflow mit frei nutzbaren SRD-Grundlagen
+- **SRD-Starter** - geführter Start-Workflow mit frei nutzbaren SRD-Grundlagen
 - **Portraits, Inventar, Notizen** - strukturierte Daten statt Blank-Textfelder
 - **Datenkontrolle** - lokale JSON-Datei, Import/Export, Bridge-Export und Datenordner-Zugriff
-- **Mehrsprachig** - Benutzeroberflaeche auf Deutsch und Englisch
+- **Mehrsprachig** - Benutzeroberfläche auf Deutsch und Englisch
 
-Gebaut mit Electron, React, TypeScript und Vite. Laeuft auf macOS, Windows und
+Gebaut mit Electron, React, TypeScript und Vite. Läuft auf macOS, Windows und
 Linux.
 
 ### Aktueller Release
@@ -60,19 +60,19 @@ Aktuelle Version: **0.1.2**
 
 | Kategorie | Funktion |
 |---|---|
-| **Charakterbibliothek** | Charaktere erstellen, suchen, auswaehlen, duplizieren, exportieren und loeschen |
-| **SRD-Assistent** | Gefuehrter Starter fuer SRD-basierte Charaktergrundlagen ohne proprietaere Inhalte |
+| **Charakterbibliothek** | Charaktere erstellen, suchen, auswählen, duplizieren, exportieren und löschen |
+| **SRD-Assistent** | Geführter Starter für SRD-basierte Charaktergrundlagen ohne proprietäre Inhalte |
 | **Portraits** | Lokale Charakterbilder importieren und entfernen |
 | **Attribute** | D20-typische Attributsmodifikatoren automatisch berechnen |
-| **Uebungsbonus** | Level-basierte Berechnung des Proficiency Bonus |
-| **Rettungswuerfe & Fertigkeiten** | Proficiency, Expertise, passive Wahrnehmung und passive Motivkunde |
-| **Kampf** | TP, RK, Bewegung, Trefferwuerfel, Initiative, Angriffe, Zauber-SG und Zauberangriff |
-| **Inventar** | Strukturierte Gegenstaende mit Menge, Gewicht, Wert, Ausruestung, Notizen und Summen |
-| **Sitzungsnotizen** | Datierte Notizen mit Titel, Tags und Textkoerper |
-| **Geschichte** | Persoenlichkeit, Ideale, Bindungen, Makel, Vorgeschichte und Merkmale |
-| **Kontextmenues** | Rechtsklick-Aktionen fuer Charaktere, Angriffe, Zauber, Inventar und Notizen |
-| **Datenmenue** | Kompakte Import-/Export-Aktionen, Bridge-JSON, DDB-aehnlicher JSON-Import und Datenordner |
-| **Autosave** | Lokale JSON-Persistenz mit Normalisierung beschaedigter oder aelterer Daten |
+| **Übungsbonus** | Level-basierte Berechnung des Proficiency Bonus |
+| **Rettungswürfe & Fertigkeiten** | Proficiency, Expertise, passive Wahrnehmung und passive Motivkunde |
+| **Kampf** | TP, RK, Bewegung, Trefferwürfel, Initiative, Angriffe, Zauber-SG und Zauberangriff |
+| **Inventar** | Strukturierte Gegenstände mit Menge, Gewicht, Wert, Ausrüstung, Notizen und Summen |
+| **Sitzungsnotizen** | Datierte Notizen mit Titel, Tags und Textkörper |
+| **Geschichte** | Persönlichkeit, Ideale, Bindungen, Makel, Vorgeschichte und Merkmale |
+| **Kontextmenüs** | Rechtsklick-Aktionen für Charaktere, Angriffe, Zauber, Inventar und Notizen |
+| **Datenmenü** | Kompakte Import-/Export-Aktionen, Bridge-JSON, DDB-ähnlicher JSON-Import und Datenordner |
+| **Autosave** | Lokale JSON-Persistenz mit Normalisierung beschädigter oder älterer Daten |
 | **Responsive UI** | Desktop- und schmale Layouts per Playwright-Screenshots abgesichert |
 
 ### Schnellstart
@@ -90,22 +90,22 @@ npm run dev
 
 ```bash
 npm run build      # TypeScript + Preload + Renderer kompilieren
-npm run pack       # Entpacktes App-Verzeichnis fuer die aktuelle Plattform
-npm run dist       # Installer/Distributionspakete fuer die aktuelle Plattform
+npm run pack       # Entpacktes App-Verzeichnis für die aktuelle Plattform
+npm run dist       # Installer/Distributionspakete für die aktuelle Plattform
 ```
 
-### Qualitaetssicherung
+### Qualitätssicherung
 
 ```bash
 npm run test:e2e          # Build + Playwright/Electron E2E-Suite
 npm run test:e2e:headed   # Gleiche Suite mit sichtbarem Fenster
-npm run test:e2e:update   # Screenshot-Baselines nach absichtlichen UI-Aenderungen aktualisieren
+npm run test:e2e:update   # Screenshot-Baselines nach absichtlichen UI-Änderungen aktualisieren
 ```
 
-Die E2E-Suite startet CharBerry mit isolierten Testdaten und prueft Rendering,
-Berechnungen, Erstellen/Bearbeiten, Persistenz, Normalisierung beschaedigter
-Daten, deutsche UI, SRD-Assistent, Kontextmenues, strukturiertes Inventar,
-Sitzungsnotizen sowie Desktop-/Responsive-Screenshots ohne Ueberlappungen.
+Die E2E-Suite startet CharBerry mit isolierten Testdaten und prüft Rendering,
+Berechnungen, Erstellen/Bearbeiten, Persistenz, Normalisierung beschädigter
+Daten, deutsche UI, SRD-Assistent, Kontextmenüs, strukturiertes Inventar,
+Sitzungsnotizen sowie Desktop-/Responsive-Screenshots ohne Überlappungen.
 
 ### Lokale Daten
 
@@ -115,15 +115,15 @@ CharBerry speichert lokal im Electron-AppData-Verzeichnis:
 data/charberry-library.json
 ```
 
-Die Datei wird beim Laden normalisiert, damit beschaedigte oder veraltete Daten
-die Oberflaeche nicht brechen.
+Die Datei wird beim Laden normalisiert, damit beschädigte oder veraltete Daten
+die Oberfläche nicht brechen.
 
 ### Projektstruktur
 
 ```text
 src/
   main/          Electron Main-Prozess, IPC und lokale Persistenz
-  preload/       Sichere Context Bridge fuer die Renderer-API
+  preload/       Sichere Context Bridge für die Renderer-API
   renderer/      React-App, Charakterbogen, Assistent, i18n
 tests/e2e/       Playwright Electron QA-Suite
 resources/       Logo und App-Icons
@@ -134,16 +134,16 @@ resources/       Logo und App-Icons
 | Technologie | Verwendung |
 |---|---|
 | Electron 41 | Desktop-Shell und native Dialoge |
-| React 18 | Benutzeroberflaeche |
+| React 18 | Benutzeroberfläche |
 | TypeScript 5.9 | Typisierte App-Logik |
 | Vite 6 | Renderer-Bundling |
 | Playwright | Electron E2E und Screenshot-Validierung |
-| electron-builder | Packaging fuer macOS, Windows und Linux |
+| electron-builder | Packaging für macOS, Windows und Linux |
 
 ### CI/CD & Releases
 
 Fertige Builds werden als [GitHub Releases](https://github.com/RollBerryStudios/CharBerry/releases)
-veroeffentlicht. Die Release-Seite enthaelt Windows-, Linux- und macOS-Artefakte.
+veröffentlicht. Die Release-Seite enthält Windows-, Linux- und macOS-Artefakte.
 Lokale Builds sind unsigned; notarized macOS-Releases oder signierte
 Windows-Installer brauchen eigene Zertifikate und Secrets.
 
