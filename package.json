@@ -25,7 +25,11 @@
     "test:e2e:headed": "npm run build && playwright test --headed",
     "test:e2e:update": "npm run build && playwright test --update-snapshots",
     "pack": "npm run build && electron-builder --dir",
-    "dist": "npm run build && electron-builder"
+    "dist": "npm run build && electron-builder",
+    "typecheck:renderer": "tsc -p tsconfig.renderer.json --noEmit",
+    "typecheck": "npm run build:main && npm run typecheck:preload && npm run typecheck:renderer",
+    "lint": "npm run typecheck",
+    "quality": "npm run build && playwright test && npm audit"
   },
   "dependencies": {
     "react": "^18.3.1",

@@ -3,6 +3,7 @@ import { contextBridge, ipcRenderer } from 'electron'
 export type AbilityKey = 'str' | 'dex' | 'con' | 'int' | 'wis' | 'cha'
 export type SkillRank = 'none' | 'proficient' | 'expertise'
 export type Locale = 'en' | 'de'
+export type Theme = 'dark' | 'light'
 
 export interface CharacterAttack {
   id: string
@@ -83,7 +84,7 @@ export interface CharacterLibrary {
   version: 1
   activeCharacterId: string | null
   characters: CharacterSheet[]
-  settings?: { locale: Locale }
+  settings?: { locale: Locale; theme?: Theme }
 }
 
 export interface CharBerryAPI {
@@ -96,6 +97,7 @@ export interface CharBerryAPI {
   importCharacterData: () => Promise<unknown | null>
   importPortrait: () => Promise<string | null>
   revealData: () => Promise<string>
+  openExternal: (url: string) => Promise<boolean>
   confirm: (message: string, detail?: string) => Promise<boolean>
 }
 
@@ -109,6 +111,7 @@ const api: CharBerryAPI = {
   importCharacterData: () => ipcRenderer.invoke('charberry:character-data-import'),
   importPortrait: () => ipcRenderer.invoke('charberry:portrait-import'),
   revealData: () => ipcRenderer.invoke('charberry:reveal-data'),
+  openExternal: (url) => ipcRenderer.invoke('charberry:open-external', url),
   confirm: (message, detail) => ipcRenderer.invoke('charberry:confirm', message, detail),
 }
 

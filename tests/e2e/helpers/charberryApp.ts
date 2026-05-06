@@ -48,7 +48,7 @@ export interface CharacterLibrary {
   version: 1
   activeCharacterId: string | null
   characters: CharacterSheet[]
-  settings?: { locale: 'en' | 'de' }
+  settings?: { locale: 'en' | 'de'; theme?: 'dark' | 'light' }
 }
 
 export interface LaunchedCharBerry {
@@ -130,7 +130,7 @@ export function sampleLibrary(): CharacterLibrary {
     sessionNotes: [{ id: 'note-track', date: '2026-05-05', title: 'Trail signs', body: 'Tracks enemy movement.', tags: ['session'] }],
     updatedAt: '2026-05-05T10:00:00.000Z',
   }
-  return { version: 1, activeCharacterId: character.id, characters: [character], settings: { locale: 'en' } }
+  return { version: 1, activeCharacterId: character.id, characters: [character], settings: { locale: 'en', theme: 'dark' } }
 }
 
 export function prepareUserData(userDataDir: string, library: CharacterLibrary = sampleLibrary()): string {

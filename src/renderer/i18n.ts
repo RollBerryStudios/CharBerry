@@ -2,6 +2,8 @@ export type Locale = 'en' | 'de'
 
 type Key =
   | 'tagline' | 'export' | 'import' | 'dataFolder' | 'dataActions' | 'language' | 'characters' | 'savedSheets'
+  | 'settings' | 'appearance' | 'theme' | 'darkMode' | 'lightMode' | 'community' | 'githubRepo'
+  | 'rollberryTitle' | 'rollberryInfo' | 'rollberryGithub'
   | 'new' | 'wizard' | 'searchCharacters' | 'delete' | 'duplicate' | 'exportCharacter'
   | 'importDdb' | 'exportDdb' | 'setPortrait' | 'removePortrait' | 'overview' | 'combat'
   | 'skills' | 'story' | 'notes' | 'name' | 'ancestry' | 'class' | 'subclass' | 'level'
@@ -16,6 +18,8 @@ type Key =
   | 'characterCreator' | 'abilityMethod' | 'standardArray' | 'manual' | 'applyTemplate'
   | 'close' | 'libraryImported' | 'importInvalid' | 'importFailed' | 'portraitImported'
   | 'portraitFailed' | 'ddbImported' | 'ddbUnsupported' | 'actionMenu' | 'contextHint'
+  | 'newItem' | 'sessionNote' | 'copySuffix' | 'deleteCharacterDetail' | 'newAttack'
+  | 'newSpell' | 'remove'
 
 export type TranslationKey = Key
 
@@ -26,6 +30,16 @@ const EN: Record<Key, string> = {
   dataFolder: 'Data Folder',
   dataActions: 'Data',
   language: 'Language',
+  settings: 'Settings',
+  appearance: 'Appearance',
+  theme: 'Theme',
+  darkMode: 'Dark',
+  lightMode: 'Light',
+  community: 'Community',
+  githubRepo: 'GitHub repository',
+  rollberryTitle: 'RollBerry Studios',
+  rollberryInfo: 'Local-first tabletop tools for game masters and players.',
+  rollberryGithub: 'RollBerry Studios on GitHub',
   characters: 'Characters',
   savedSheets: 'saved sheets',
   new: 'New',
@@ -113,6 +127,13 @@ const EN: Record<Key, string> = {
   ddbUnsupported: 'The selected file is not a supported character JSON.',
   actionMenu: 'Action menu',
   contextHint: 'Right-click cards and rows for quick actions.',
+  newItem: 'New Item',
+  sessionNote: 'Session Note',
+  copySuffix: 'Copy',
+  deleteCharacterDetail: 'This removes the character from the local CharBerry library.',
+  newAttack: 'New Attack',
+  newSpell: 'New Spell',
+  remove: 'Remove',
 }
 
 const DE: Record<Key, string> = {
@@ -122,6 +143,16 @@ const DE: Record<Key, string> = {
   dataFolder: 'Datenordner',
   dataActions: 'Daten',
   language: 'Sprache',
+  settings: 'Einstellungen',
+  appearance: 'Darstellung',
+  theme: 'Design',
+  darkMode: 'Dunkel',
+  lightMode: 'Hell',
+  community: 'Community',
+  githubRepo: 'GitHub-Repository',
+  rollberryTitle: 'RollBerry Studios',
+  rollberryInfo: 'Lokale Tabletop-Tools für Spielleitungen und Spieler.',
+  rollberryGithub: 'RollBerry Studios auf GitHub',
   characters: 'Charaktere',
   savedSheets: 'gespeicherte Bögen',
   new: 'Neu',
@@ -209,8 +240,126 @@ const DE: Record<Key, string> = {
   ddbUnsupported: 'Die gewählte Datei ist kein unterstütztes Charakter-JSON.',
   actionMenu: 'Aktionsmenü',
   contextHint: 'Rechtsklick auf Karten und Zeilen öffnet Schnellaktionen.',
+  newItem: 'Neuer Gegenstand',
+  sessionNote: 'Sitzungsnotiz',
+  copySuffix: 'Kopie',
+  deleteCharacterDetail: 'Der Charakter wird aus der lokalen CharBerry-Bibliothek entfernt.',
+  newAttack: 'Neuer Angriff',
+  newSpell: 'Neuer Zauber',
+  remove: 'Entfernen',
 }
 
 export function t(locale: Locale, key: Key): string {
   return (locale === 'de' ? DE : EN)[key]
+}
+
+const SKILL_LABELS: Record<Locale, Record<string, string>> = {
+  en: {
+    acrobatics: 'Acrobatics',
+    animalHandling: 'Animal Handling',
+    arcana: 'Arcana',
+    athletics: 'Athletics',
+    deception: 'Deception',
+    history: 'History',
+    insight: 'Insight',
+    intimidation: 'Intimidation',
+    investigation: 'Investigation',
+    medicine: 'Medicine',
+    nature: 'Nature',
+    perception: 'Perception',
+    performance: 'Performance',
+    persuasion: 'Persuasion',
+    religion: 'Religion',
+    sleightOfHand: 'Sleight of Hand',
+    stealth: 'Stealth',
+    survival: 'Survival',
+  },
+  de: {
+    acrobatics: 'Akrobatik',
+    animalHandling: 'Mit Tieren umgehen',
+    arcana: 'Arkane Kunde',
+    athletics: 'Athletik',
+    deception: 'Täuschen',
+    history: 'Geschichte',
+    insight: 'Motivkunde',
+    intimidation: 'Einschüchtern',
+    investigation: 'Nachforschungen',
+    medicine: 'Heilkunde',
+    nature: 'Naturkunde',
+    perception: 'Wahrnehmung',
+    performance: 'Auftreten',
+    persuasion: 'Überzeugen',
+    religion: 'Religion',
+    sleightOfHand: 'Fingerfertigkeit',
+    stealth: 'Heimlichkeit',
+    survival: 'Überleben',
+  },
+}
+
+const CLASS_LABELS: Record<Locale, Record<string, string>> = {
+  en: {},
+  de: {
+    Barbarian: 'Barbar',
+    Bard: 'Barde',
+    Cleric: 'Kleriker',
+    Druid: 'Druide',
+    Fighter: 'Kämpfer',
+    Monk: 'Mönch',
+    Paladin: 'Paladin',
+    Ranger: 'Waldläufer',
+    Rogue: 'Schurke',
+    Sorcerer: 'Zauberer',
+    Warlock: 'Hexenmeister',
+    Wizard: 'Magier',
+  },
+}
+
+const SPECIES_LABELS: Record<Locale, Record<string, string>> = {
+  en: {},
+  de: {
+    Human: 'Mensch',
+    Dwarf: 'Zwerg',
+    Elf: 'Elf',
+    Halfling: 'Halbling',
+    Dragonborn: 'Drachenblütiger',
+    Gnome: 'Gnom',
+    'Half-Elf': 'Halbelf',
+    'Half-Orc': 'Halbork',
+    Tiefling: 'Tiefling',
+  },
+}
+
+const BACKGROUND_LABELS: Record<Locale, Record<string, string>> = {
+  en: {},
+  de: {
+    Acolyte: 'Akolyth',
+    Charlatan: 'Scharlatan',
+    Criminal: 'Krimineller',
+    Entertainer: 'Unterhalter',
+    'Folk Hero': 'Volksheld',
+    'Guild Artisan': 'Gildenhandwerker',
+    Hermit: 'Eremit',
+    Noble: 'Adliger',
+    Outlander: 'Weltenwanderer',
+    Sage: 'Weiser',
+    Sailor: 'Seefahrer',
+    Soldier: 'Soldat',
+    Urchin: 'Straßenkind',
+  },
+}
+
+export function skillLabel(locale: Locale, key: string): string {
+  return SKILL_LABELS[locale][key] ?? SKILL_LABELS.en[key] ?? key
+}
+
+export function classLabel(locale: Locale, value: string): string {
+  return CLASS_LABELS[locale][value] ?? value
+}
+
+export function speciesLabel(locale: Locale, value: string): string {
+  return SPECIES_LABELS[locale][value] ?? value
+}
+
+export function backgroundLabel(locale: Locale, value: string): string {
+  return BACKGROUND_LABELS[locale][value] ?? value
 }

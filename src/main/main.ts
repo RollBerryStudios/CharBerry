@@ -5,6 +5,7 @@ import { extname, join, resolve } from 'path'
 type AbilityKey = 'str' | 'dex' | 'con' | 'int' | 'wis' | 'cha'
 type SkillRank = 'none' | 'proficient' | 'expertise'
 type Locale = 'en' | 'de'
+type Theme = 'dark' | 'light'
 
 interface CharacterAttack {
   id: string
@@ -85,7 +86,7 @@ interface CharacterLibrary {
   version: 1
   activeCharacterId: string | null
   characters: CharacterSheet[]
-  settings?: { locale: Locale }
+  settings?: { locale: Locale; theme?: Theme }
 }
 
 const isDev = process.env.NODE_ENV === 'development'
@@ -158,7 +159,11 @@ function skillRank(value: unknown): SkillRank {
 }
 
 function locale(value: unknown): Locale {
-  return value === 'de' ? 'de' : 'en'
+  return value === 'en' ? 'en' : 'de'
+}
+
+function theme(value: unknown): Theme {
+  return value === 'light' ? 'light' : 'dark'
 }
 
 function money(value: unknown): { cp: number; sp: number; ep: number; gp: number; pp: number } {
@@ -379,7 +384,7 @@ function defaultLibrary(): CharacterLibrary {
   ]
   character.features = 'Favored Enemy, Natural Explorer, Extra Attack'
   character.notes = 'Tracks enemy movement and carries party navigation details.'
-  return { version: 1, activeCharacterId: character.id, characters: [character], settings: { locale: 'en' } }
+  return { version: 1, activeCharacterId: character.id, characters: [character], settings: { locale: 'de', theme: 'dark' } }
 }
 
 function normalizeLibrary(value: unknown): CharacterLibrary {
@@ -393,7 +398,19 @@ function normalizeLibrary(value: unknown): CharacterLibrary {
   const activeCharacterId = typeof parsed.activeCharacterId === 'string' && characters.some((character) => character.id === parsed.activeCharacterId)
     ? parsed.activeCharacterId
     : characters[0].id
-  return { version: 1, characters, activeCharacterId, settings: { locale: locale(parsed.settings?.locale) } }
+  return { version: 1, characters, activeCharacterId, settings: { locale: locale(parsed.settings?.locale), theme: theme(parsed.settings?.theme) } }
+}
+
+function safeExternalUrl(value: unknown): string | null {
+  if (typeof value !== 'string') return null
+  try {
+    const url = new URL(value)
+    if (url.protocol !== 'https:' || url.hostname !== 'github.com') return null
+    if (url.pathname !== '/RollBerryStudios' && !url.pathname.startsWith('/RollBerryStudios/')) return null
+    return url.toString()
+  } catch {
+    return null
+  }
 }
 
 function loadLibrary(): CharacterLibrary {
@@ -506,6 +523,12 @@ function registerIpc(): void {
     }
   })
   ipcMain.handle('charberry:reveal-data', async () => shell.openPath(userDataPath()))
+  ipcMain.handle('charberry:open-external', async (_event, url: string) => {
+    const safeUrl = safeExternalUrl(url)
+    if (!safeUrl) return false
+    await shell.openExternal(safeUrl)
+    return true
+  })
   ipcMain.handle('charberry:confirm', async (event, message: string, detail?: string) => {
     const options = {
       type: 'question',

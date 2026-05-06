@@ -7,6 +7,7 @@ test.describe('CharBerry Electron QA', () => {
     try {
       await expect(page).toHaveTitle('CharBerry')
       await expect(page.locator('.brand img')).toBeVisible()
+      await expect(page.getByRole('button', { name: 'Settings' })).toBeVisible()
       await expect(page.getByRole('heading', { name: 'Characters' })).toBeVisible()
       await expect(page.getByText('Aster Rowan')).toBeVisible()
       await expect(page.getByText('Level 5 Half-Elf Ranger')).toBeVisible()
@@ -271,7 +272,17 @@ test.describe('CharBerry Electron QA', () => {
   test('supports German UI, SRD creator, structured inventory/session notes, and context menus', async ({}, testInfo) => {
     const { app, page, libraryPath } = await launchCharBerry(testInfo)
     try {
+      await page.getByRole('button', { name: 'Settings' }).click()
+      await expect(page.getByRole('dialog', { name: 'Settings' })).toBeVisible()
+      await expect(page.getByLabel('Language')).toHaveValue('en')
+      await expect(page.getByLabel('Theme')).toHaveValue('dark')
+      await expect(page.getByRole('button', { name: 'GitHub repository' })).toBeVisible()
+      await expect(page.getByRole('button', { name: 'RollBerry Studios on GitHub' })).toBeVisible()
+      await page.getByLabel('Theme').selectOption('light')
+      await expect(page.locator('.app-shell')).toHaveAttribute('data-theme', 'light')
+      await page.getByLabel('Theme').selectOption('dark')
       await page.getByLabel('Language').selectOption('de')
+      await page.getByRole('button', { name: 'Schließen' }).click()
       await expect(page.getByRole('heading', { name: 'Charaktere' })).toBeVisible()
       await expect(page.getByRole('button', { name: 'Assistent' })).toBeVisible()
       await page.locator('.action-menu summary').click()
@@ -305,12 +316,13 @@ test.describe('CharBerry Electron QA', () => {
         const active = saved.characters[0]
         return {
           locale: saved.settings?.locale,
+          theme: saved.settings?.theme,
           className: active.className,
           ancestry: active.ancestry,
           spellbooks: active.inventoryItems.filter((item) => item.name === 'Spellbook').length,
           note: active.sessionNotes[0]?.title,
         }
-      }).toEqual({ locale: 'de', className: 'Wizard', ancestry: 'Elf', spellbooks: 2, note: 'Erste Sitzung' })
+      }).toEqual({ locale: 'de', theme: 'dark', className: 'Wizard', ancestry: 'Elf', spellbooks: 2, note: 'Erste Sitzung' })
     } finally {
       await app.close()
     }
