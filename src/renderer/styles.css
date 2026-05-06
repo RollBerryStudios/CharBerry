@@ -295,13 +295,13 @@ h1, h2, h3, p { margin-top: 0; }
   .settings-grid { grid-template-columns: 1fr; }
 }
 
-@media (max-width: 860px) {
+@media (max-width: 980px) {
   html, body, #root { overflow: auto; }
   .app-shell { min-height: 100%; height: auto; }
   .titlebar { align-items: flex-start; flex-direction: column; }
   .titlebar-actions { justify-content: flex-start; }
   .char-layout { grid-template-columns: 1fr; overflow: visible; }
-  .roster-panel { max-height: 340px; }
+  .roster-panel { max-height: 250px; }
   .hero-sheet { grid-template-columns: 84px minmax(0, 1fr); }
   .portrait { width: 76px; height: 76px; font-size: 34px; }
   .delete-character { grid-column: 1 / -1; }
