@@ -264,6 +264,12 @@ test.describe('CharBerry Electron QA', () => {
       await assertVisibleLayout(page)
       await assertNoUnexpectedOverlaps(page)
       await expect(page).toHaveScreenshot('charberry-combat-responsive.png', { fullPage: true })
+
+      await page.setViewportSize({ width: 390, height: 844 })
+      await page.waitForTimeout(100)
+      await assertVisibleLayout(page)
+      await assertNoUnexpectedOverlaps(page)
+      await expect(page).toHaveScreenshot('charberry-mobile-390.png', { fullPage: true })
     } finally {
       await app.close()
     }
@@ -279,6 +285,7 @@ test.describe('CharBerry Electron QA', () => {
       await expect(page.getByRole('button', { name: 'kontakt@rollberry.de' })).toBeVisible()
       await expect(page.getByRole('button', { name: 'GitHub repository' })).toBeVisible()
       await expect(page.getByRole('button', { name: 'RollBerry Studios on GitHub' })).toBeVisible()
+      await expect(page).toHaveScreenshot('charberry-settings-dark-en.png', { fullPage: true })
       await page.getByLabel('Theme').selectOption('light')
       await expect(page.locator('.app-shell')).toHaveAttribute('data-theme', 'light')
       await page.getByLabel('Theme').selectOption('dark')
