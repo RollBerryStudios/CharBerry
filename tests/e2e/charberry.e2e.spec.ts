@@ -276,6 +276,7 @@ test.describe('CharBerry Electron QA', () => {
       await expect(page.getByRole('dialog', { name: 'Settings' })).toBeVisible()
       await expect(page.getByLabel('Language')).toHaveValue('en')
       await expect(page.getByLabel('Theme')).toHaveValue('dark')
+      await expect(page.getByRole('button', { name: 'kontakt@rollberry.de' })).toBeVisible()
       await expect(page.getByRole('button', { name: 'GitHub repository' })).toBeVisible()
       await expect(page.getByRole('button', { name: 'RollBerry Studios on GitHub' })).toBeVisible()
       await page.getByLabel('Theme').selectOption('light')

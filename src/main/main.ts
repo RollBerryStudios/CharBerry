@@ -405,6 +405,7 @@ function safeExternalUrl(value: unknown): string | null {
   if (typeof value !== 'string') return null
   try {
     const url = new URL(value)
+    if (url.protocol === 'mailto:' && url.pathname === 'kontakt@rollberry.de') return url.toString()
     if (url.protocol !== 'https:' || url.hostname !== 'github.com') return null
     if (url.pathname !== '/RollBerryStudios' && !url.pathname.startsWith('/RollBerryStudios/')) return null
     return url.toString()
