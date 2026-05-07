@@ -2,10 +2,10 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { MouseEvent } from 'react'
 import type { AbilityKey, CharacterAttack, CharacterInventoryItem, CharacterLibrary, CharacterSessionNote, CharacterSheet, CharacterSpell, Locale, SkillRank, Theme } from '../preload/preload'
 import logoUrl from '../../resources/logo.png'
-import { backgroundLabel, classLabel, skillLabel, speciesLabel, t, type TranslationKey } from './i18n'
+import { abilityLabel, backgroundLabel, classLabel, skillLabel, speciesLabel, t, type TranslationKey } from './i18n'
 import { applySkillPicks, backgroundByName, classByName, speciesByName, SRD_BACKGROUNDS, SRD_CLASSES, SRD_SPECIES, STANDARD_ARRAY } from './rules/srd'
 
-type TabId = 'overview' | 'combat' | 'skills' | 'story' | 'notes'
+type TabId = 'overview' | 'combat' | 'skills' | 'story' | 'inventory' | 'notes'
 
 const ABILITIES: Array<{ key: AbilityKey; label: string }> = [
   { key: 'str', label: 'STR' },
@@ -42,6 +42,7 @@ const TABS: Array<{ id: TabId; label: TranslationKey }> = [
   { id: 'combat', label: 'combat' },
   { id: 'skills', label: 'skills' },
   { id: 'story', label: 'story' },
+  { id: 'inventory', label: 'inventory' },
   { id: 'notes', label: 'notes' },
 ]
 
@@ -56,7 +57,7 @@ interface CreatorDraft {
   className: string
   background: string
   level: number
-  abilityMethod: 'standard' | 'manual'
+  abilityMethod: 'standard' | 'pointBuy' | 'manual'
 }
 
 interface ContextMenuState {
@@ -131,6 +132,7 @@ function emptyCharacter(): CharacterSheet {
     hitDice: '1d8',
     inspiration: false,
     portraitDataUrl: '',
+    portraitZoom: 1,
     attacks: [],
     spells: [],
     inventory: '',
@@ -199,6 +201,15 @@ function suggestedStandardScores(primary: AbilityKey[]): Record<AbilityKey, numb
   return scores
 }
 
+function suggestedPointBuyScores(primary: AbilityKey[]): Record<AbilityKey, number> {
+  const order: AbilityKey[] = [...primary, 'con', 'dex', 'wis', 'int', 'str', 'cha']
+  const unique = Array.from(new Set(order)) as AbilityKey[]
+  const values = [15, 14, 14, 10, 10, 8]
+  const scores = { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 }
+  unique.slice(0, 6).forEach((ability, index) => { scores[ability] = values[index] ?? 10 })
+  return scores
+}
+
 function characterFromExternal(data: unknown): CharacterSheet | null {
   if (!data || typeof data !== 'object') return null
   const root = data as Record<string, unknown>
@@ -256,6 +267,7 @@ export default function App() {
   const [toast, setToast] = useState<string | null>(null)
   const [creatorOpen, setCreatorOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [portraitEditorOpen, setPortraitEditorOpen] = useState(false)
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null)
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const libraryRef = useRef(library)
@@ -398,7 +410,8 @@ export default function App() {
       notify(t(locale, 'portraitFailed'))
       return
     }
-    updateActive({ portraitDataUrl: dataUrl })
+    updateActive({ portraitDataUrl: dataUrl, portraitZoom: 1 })
+    setPortraitEditorOpen(true)
     notify(t(locale, 'portraitImported'))
   }
 
@@ -452,20 +465,25 @@ export default function App() {
   }
 
   function applyCreatorTemplate(draft: CreatorDraft): void {
-    const srdClass = classByName(draft.className)
-    const species = speciesByName(draft.ancestry)
-    const background = backgroundByName(draft.background)
+    const knownClass = SRD_CLASSES.some((item) => item.name === draft.className)
+    const knownSpecies = SRD_SPECIES.some((item) => item.name === draft.ancestry)
+    const knownBackground = SRD_BACKGROUNDS.some((item) => item.name === draft.background)
+    const srdClass = knownClass ? classByName(draft.className) : classByName(activeCharacter.className)
+    const species = knownSpecies ? speciesByName(draft.ancestry) : speciesByName(activeCharacter.ancestry)
+    const background = knownBackground ? backgroundByName(draft.background) : backgroundByName(activeCharacter.background)
     const abilityScores = draft.abilityMethod === 'standard'
       ? suggestedStandardScores(srdClass.primary)
-      : activeCharacter.abilityScores
+      : draft.abilityMethod === 'pointBuy'
+        ? suggestedPointBuyScores(srdClass.primary)
+        : activeCharacter.abilityScores
     const savingThrows = { str: false, dex: false, con: false, int: false, wis: false, cha: false } as Record<AbilityKey, boolean>
     for (const ability of srdClass.savingThrows) savingThrows[ability] = true
     const skills = applySkillPicks(applySkillPicks(emptySkills(), srdClass.suggestedSkills), background.skills)
     updateActive({
       name: draft.name.trim() || activeCharacter.name,
-      ancestry: species.name,
-      className: srdClass.name,
-      background: background.name,
+      ancestry: draft.ancestry.trim() || species.name,
+      className: draft.className.trim() || srdClass.name,
+      background: draft.background.trim() || background.name,
       level: draft.level,
       abilityScores,
       savingThrows,
@@ -531,7 +549,11 @@ export default function App() {
                 onClick={() => setLibrary((current) => ({ ...current, activeCharacterId: character.id }))}
                 onContextMenu={(event) => { event.preventDefault(); setContextMenu({ x: event.clientX, y: event.clientY, kind: 'character', id: character.id }) }}
               >
-                <span className="avatar">{character.portraitDataUrl ? <img src={character.portraitDataUrl} alt="" /> : character.name.slice(0, 2).toUpperCase()}</span>
+                <span className="avatar">
+                  {character.portraitDataUrl
+                    ? <img src={character.portraitDataUrl} alt="" style={{ transform: `scale(${character.portraitZoom ?? 1})` }} />
+                    : character.name.slice(0, 2).toUpperCase()}
+                </span>
                 <span>
                   <strong>{character.name}</strong>
                   <em>{t(locale, 'level')} {character.level} {speciesLabel(locale, character.ancestry)} {classLabel(locale, character.className)}</em>
@@ -543,8 +565,15 @@ export default function App() {
 
         <section className="sheet-panel">
           <div className="hero-sheet">
-            <button className="portrait" onClick={importPortrait} title={t(locale, 'setPortrait')} aria-label={t(locale, 'setPortrait')}>
-              {activeCharacter.portraitDataUrl ? <img src={activeCharacter.portraitDataUrl} alt="" /> : activeCharacter.name.slice(0, 1).toUpperCase()}
+            <button
+              className="portrait"
+              onClick={() => activeCharacter.portraitDataUrl ? setPortraitEditorOpen(true) : void importPortrait()}
+              title={activeCharacter.portraitDataUrl ? t(locale, 'portraitEditor') : t(locale, 'setPortrait')}
+              aria-label={activeCharacter.portraitDataUrl ? t(locale, 'portraitEditor') : t(locale, 'setPortrait')}
+            >
+              {activeCharacter.portraitDataUrl
+                ? <img src={activeCharacter.portraitDataUrl} alt="" style={{ transform: `scale(${activeCharacter.portraitZoom ?? 1})` }} />
+                : activeCharacter.name.slice(0, 1).toUpperCase()}
             </button>
             <div className="identity-grid">
               <label>{t(locale, 'name')}<input aria-label="Name" value={activeCharacter.name} onChange={(event) => updateActive({ name: event.target.value })} /></label>
@@ -578,7 +607,7 @@ export default function App() {
                   <div className="ability-grid">
                     {ABILITIES.map((ability) => (
                       <label key={ability.key} className="ability-box">
-                        <span>{ability.label}</span>
+                        <span>{abilityLabel(locale, ability.key)}</span>
                         <input type="number" min={1} max={30} value={activeCharacter.abilityScores[ability.key]} onChange={(event) => updateAbility(ability.key, numberValue(event.target.value, 10))} />
                         <strong>{formatBonus(modifier(activeCharacter.abilityScores[ability.key]))}</strong>
                       </label>
@@ -612,10 +641,12 @@ export default function App() {
                   <div className="rows">
                     {activeCharacter.attacks.map((attack) => (
                       <div className="attack-row" key={attack.id}>
-                        <input aria-label="Attack name" value={attack.name} onChange={(event) => upsertAttack(attack.id, { name: event.target.value })} />
-                        <input aria-label="Attack bonus" value={attack.bonus} onChange={(event) => upsertAttack(attack.id, { bonus: event.target.value })} />
-                        <input aria-label="Attack damage" value={attack.damage} onChange={(event) => upsertAttack(attack.id, { damage: event.target.value })} />
-                        <input aria-label="Attack range" value={attack.range} onChange={(event) => upsertAttack(attack.id, { range: event.target.value })} />
+                        <label>{t(locale, 'attackName')}<input value={attack.name} onChange={(event) => upsertAttack(attack.id, { name: event.target.value })} /></label>
+                        <label>{t(locale, 'attackBonus')}<input value={attack.bonus} onChange={(event) => upsertAttack(attack.id, { bonus: event.target.value })} /></label>
+                        <label>{t(locale, 'attackDamage')}<input value={attack.damage} onChange={(event) => upsertAttack(attack.id, { damage: event.target.value })} /></label>
+                        <label>{t(locale, 'attackRange')}<input value={attack.range} onChange={(event) => upsertAttack(attack.id, { range: event.target.value })} /></label>
+                        <label>{t(locale, 'attackType')}<input value={attack.damageType} onChange={(event) => upsertAttack(attack.id, { damageType: event.target.value })} /></label>
+                        <label className="wide-field">{t(locale, 'attackNotes')}<input value={attack.notes} onChange={(event) => upsertAttack(attack.id, { notes: event.target.value })} /></label>
                         <button className="icon-button danger" aria-label={`${t(locale, 'remove')} ${attack.name}`} onClick={() => updateActive({ attacks: activeCharacter.attacks.filter((item) => item.id !== attack.id) })}>x</button>
                       </div>
                     ))}
@@ -624,19 +655,22 @@ export default function App() {
                 <section className="card">
                   <div className="section-line">
                     <h2>{t(locale, 'spells')}</h2>
-                    <button onClick={() => updateActive({ spells: [...activeCharacter.spells, { id: newId(), level: 1, name: t(locale, 'newSpell'), prepared: true, notes: '' }] })}>{t(locale, 'addSpell')}</button>
+                    <button onClick={() => updateActive({ spells: [...activeCharacter.spells, { id: newId(), level: 1, name: t(locale, 'newSpell'), damage: '', range: '', prepared: true, notes: '' }] })}>{t(locale, 'addSpell')}</button>
                   </div>
                   <label>{t(locale, 'spellcastingAbility')}
                     <select value={activeCharacter.spellcastingAbility} onChange={(event) => updateActive({ spellcastingAbility: event.target.value as AbilityKey })}>
-                      {ABILITIES.map((ability) => <option key={ability.key} value={ability.key}>{ability.label}</option>)}
+                      {ABILITIES.map((ability) => <option key={ability.key} value={ability.key}>{abilityLabel(locale, ability.key)}</option>)}
                     </select>
                   </label>
                   <div className="rows">
                     {activeCharacter.spells.map((spell) => (
                       <div className="spell-row" key={spell.id}>
-                        <input aria-label="Spell name" value={spell.name} onChange={(event) => upsertSpell(spell.id, { name: event.target.value })} />
-                        <input aria-label="Spell level" type="number" min={0} max={9} value={spell.level} onChange={(event) => upsertSpell(spell.id, { level: numberValue(event.target.value) })} />
+                        <label>{t(locale, 'spellName')}<input value={spell.name} onChange={(event) => upsertSpell(spell.id, { name: event.target.value })} /></label>
+                        <label>{t(locale, 'spellLevel')}<input type="number" min={0} max={9} value={spell.level} onChange={(event) => upsertSpell(spell.id, { level: numberValue(event.target.value) })} /></label>
+                        <label>{t(locale, 'spellDamage')}<input value={spell.damage} onChange={(event) => upsertSpell(spell.id, { damage: event.target.value })} /></label>
+                        <label>{t(locale, 'spellRange')}<input value={spell.range} onChange={(event) => upsertSpell(spell.id, { range: event.target.value })} /></label>
                         <label className="check-line"><input type="checkbox" checked={spell.prepared} onChange={(event) => upsertSpell(spell.id, { prepared: event.target.checked })} /> {t(locale, 'prepared')}</label>
+                        <label className="wide-field">{t(locale, 'spellNotes')}<input value={spell.notes} onChange={(event) => upsertSpell(spell.id, { notes: event.target.value })} /></label>
                         <button className="icon-button danger" aria-label={`${t(locale, 'remove')} ${spell.name}`} onClick={() => updateActive({ spells: activeCharacter.spells.filter((item) => item.id !== spell.id) })}>x</button>
                       </div>
                     ))}
@@ -666,7 +700,7 @@ export default function App() {
                       <div className="skill-row" key={skill.key}>
                         <strong>{formatBonus(skillBonus(activeCharacter, skill.key))}</strong>
                         <span>{skillLabel(locale, skill.key)}</span>
-                        <em>{skill.ability.toUpperCase()}</em>
+                        <em>{abilityLabel(locale, skill.ability)}</em>
                         <select value={activeCharacter.skills[skill.key] ?? 'none'} onChange={(event) => updateSkill(skill.key, event.target.value as SkillRank)}>
                           <option value="none">{t(locale, 'none')}</option>
                           <option value="proficient">{t(locale, 'proficient')}</option>
@@ -690,8 +724,8 @@ export default function App() {
               </div>
             )}
 
-            {tab === 'notes' && (
-              <div className="content-grid notes-grid">
+            {tab === 'inventory' && (
+              <div className="content-grid inventory-grid">
                 <InventoryCard
                   locale={locale}
                   character={activeCharacter}
@@ -701,6 +735,11 @@ export default function App() {
                   onDelete={(id) => updateInventoryItems(activeCharacter.inventoryItems.filter((item) => item.id !== id))}
                   onContextMenu={(event, id) => { event.preventDefault(); setContextMenu({ x: event.clientX, y: event.clientY, kind: 'inventory', id }) }}
                 />
+              </div>
+            )}
+
+            {tab === 'notes' && (
+              <div className="content-grid notes-grid">
                 <SessionNotesCard
                   locale={locale}
                   notes={activeCharacter.sessionNotes}
@@ -721,6 +760,33 @@ export default function App() {
           onApply={applyCreatorTemplate}
           onClose={() => setCreatorOpen(false)}
         />
+      )}
+      {portraitEditorOpen && (
+        <div className="modal-backdrop" onClick={() => setPortraitEditorOpen(false)}>
+          <section className="portrait-modal" role="dialog" aria-modal="true" aria-label={t(locale, 'portraitEditor')} onClick={(event) => event.stopPropagation()}>
+            <div className="section-line">
+              <h2>{t(locale, 'portraitEditor')}</h2>
+              <button onClick={() => setPortraitEditorOpen(false)}>{t(locale, 'close')}</button>
+            </div>
+            <div className="portrait-mask">
+              {activeCharacter.portraitDataUrl
+                ? <img src={activeCharacter.portraitDataUrl} alt="" style={{ transform: `scale(${activeCharacter.portraitZoom ?? 1})` }} />
+                : activeCharacter.name.slice(0, 1).toUpperCase()}
+            </div>
+            <label>{t(locale, 'zoom')}
+              <input
+                type="range"
+                min={1}
+                max={2.5}
+                step={0.05}
+                value={activeCharacter.portraitZoom ?? 1}
+                onChange={(event) => updateActive({ portraitZoom: numberValue(event.target.value, 1) })}
+              />
+            </label>
+            <button onClick={importPortrait}>{t(locale, 'setPortrait')}</button>
+            {activeCharacter.portraitDataUrl && <button className="danger" onClick={() => updateActive({ portraitDataUrl: '', portraitZoom: 1 })}>{t(locale, 'removePortrait')}</button>}
+          </section>
+        </div>
       )}
       {settingsOpen && (
         <div className="modal-backdrop" onClick={() => setSettingsOpen(false)}>
@@ -859,6 +925,14 @@ function InventoryCard({
   onDelete: (id: string) => void
   onContextMenu: (event: MouseEvent, id: string) => void
 }) {
+  const coinLabels: Record<keyof CharacterSheet['currency'], TranslationKey> = {
+    cp: 'coinCopper',
+    sp: 'coinSilver',
+    ep: 'coinElectrum',
+    gp: 'coinGold',
+    pp: 'coinPlatinum',
+  }
+
   return (
     <section className="card inventory-card">
       <div className="section-line">
@@ -867,7 +941,7 @@ function InventoryCard({
       </div>
       <div className="currency-row">
         {(['cp', 'sp', 'ep', 'gp', 'pp'] as const).map((coin) => (
-          <label key={coin}>{coin.toUpperCase()}
+          <label key={coin}>{t(locale, coinLabels[coin])}
             <input type="number" value={character.currency[coin]} onChange={(event) => onCurrency({ ...character.currency, [coin]: moneyValue(event.target.value) })} />
           </label>
         ))}
@@ -879,12 +953,12 @@ function InventoryCard({
       <div className="inventory-table">
         {character.inventoryItems.map((item) => (
           <div className="inventory-row" key={item.id} onContextMenu={(event) => onContextMenu(event, item.id)}>
-            <input aria-label="Item name" value={item.name} onChange={(event) => onUpdate(item.id, { name: event.target.value })} />
-            <input aria-label="Item quantity" type="number" min={1} value={item.quantity} onChange={(event) => onUpdate(item.id, { quantity: Math.max(1, numberValue(event.target.value, 1)) })} />
-            <input aria-label="Item weight" type="number" min={0} step={0.1} value={item.weight} onChange={(event) => onUpdate(item.id, { weight: Math.max(0, numberValue(event.target.value, 0)) })} />
-            <input aria-label="Item value" value={item.value} onChange={(event) => onUpdate(item.id, { value: event.target.value })} />
+            <label>{t(locale, 'itemName')}<input value={item.name} onChange={(event) => onUpdate(item.id, { name: event.target.value })} /></label>
+            <label>{t(locale, 'quantity')}<input type="number" min={1} value={item.quantity} onChange={(event) => onUpdate(item.id, { quantity: Math.max(1, numberValue(event.target.value, 1)) })} /></label>
+            <label>{t(locale, 'weight')}<input type="number" min={0} step={0.1} value={item.weight} onChange={(event) => onUpdate(item.id, { weight: Math.max(0, numberValue(event.target.value, 0)) })} /></label>
+            <label>{t(locale, 'value')}<input value={item.value} onChange={(event) => onUpdate(item.id, { value: event.target.value })} /></label>
             <label className="check-line"><input type="checkbox" checked={item.equipped} onChange={(event) => onUpdate(item.id, { equipped: event.target.checked })} /> {t(locale, 'equipped')}</label>
-            <input aria-label="Item notes" value={item.notes} onChange={(event) => onUpdate(item.id, { notes: event.target.value })} />
+            <label className="wide-field">{t(locale, 'itemNotes')}<input value={item.notes} onChange={(event) => onUpdate(item.id, { notes: event.target.value })} /></label>
             <button className="icon-button danger" aria-label={`${t(locale, 'remove')} ${item.name}`} onClick={() => onDelete(item.id)}>x</button>
           </div>
         ))}
@@ -943,6 +1017,9 @@ function CharacterCreator({ locale, activeCharacter, onApply, onClose }: { local
   const pickedClass = classByName(draft.className)
   const pickedSpecies = speciesByName(draft.ancestry)
   const pickedBackground = backgroundByName(draft.background)
+  const knownSpecies = SRD_SPECIES.some((item) => item.name === draft.ancestry)
+  const knownClass = SRD_CLASSES.some((item) => item.name === draft.className)
+  const knownBackground = SRD_BACKGROUNDS.some((item) => item.name === draft.background)
   return (
     <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={t(locale, 'characterCreator')}>
       <section className="wizard-modal">
@@ -953,24 +1030,31 @@ function CharacterCreator({ locale, activeCharacter, onApply, onClose }: { local
         <div className="wizard-grid">
           <label>{t(locale, 'name')}<input value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} /></label>
           <label>{t(locale, 'ancestry')}
-            <select value={draft.ancestry} onChange={(event) => setDraft({ ...draft, ancestry: event.target.value })}>
+            <select value={knownSpecies ? draft.ancestry : '__custom__'} onChange={(event) => setDraft({ ...draft, ancestry: event.target.value === '__custom__' ? '' : event.target.value })}>
               {SRD_SPECIES.map((item) => <option key={item.name} value={item.name}>{speciesLabel(locale, item.name)}</option>)}
+              <option value="__custom__">{t(locale, 'customOption')}</option>
             </select>
+            {!knownSpecies && <input value={draft.ancestry} onChange={(event) => setDraft({ ...draft, ancestry: event.target.value })} />}
           </label>
           <label>{t(locale, 'class')}
-            <select value={draft.className} onChange={(event) => setDraft({ ...draft, className: event.target.value })}>
+            <select value={knownClass ? draft.className : '__custom__'} onChange={(event) => setDraft({ ...draft, className: event.target.value === '__custom__' ? '' : event.target.value })}>
               {SRD_CLASSES.map((item) => <option key={item.name} value={item.name}>{classLabel(locale, item.name)}</option>)}
+              <option value="__custom__">{t(locale, 'customOption')}</option>
             </select>
+            {!knownClass && <input value={draft.className} onChange={(event) => setDraft({ ...draft, className: event.target.value })} />}
           </label>
           <label>{t(locale, 'background')}
-            <select value={draft.background} onChange={(event) => setDraft({ ...draft, background: event.target.value })}>
+            <select value={knownBackground ? draft.background : '__custom__'} onChange={(event) => setDraft({ ...draft, background: event.target.value === '__custom__' ? '' : event.target.value })}>
               {SRD_BACKGROUNDS.map((item) => <option key={item.name} value={item.name}>{backgroundLabel(locale, item.name)}</option>)}
+              <option value="__custom__">{t(locale, 'customOption')}</option>
             </select>
+            {!knownBackground && <input value={draft.background} onChange={(event) => setDraft({ ...draft, background: event.target.value })} />}
           </label>
           <label>{t(locale, 'level')}<input type="number" min={1} max={20} value={draft.level} onChange={(event) => setDraft({ ...draft, level: Math.max(1, Math.min(20, numberValue(event.target.value, 1))) })} /></label>
           <label>{t(locale, 'abilityMethod')}
             <select value={draft.abilityMethod} onChange={(event) => setDraft({ ...draft, abilityMethod: event.target.value as CreatorDraft['abilityMethod'] })}>
               <option value="standard">{t(locale, 'standardArray')}</option>
+              <option value="pointBuy">{t(locale, 'pointBuy')}</option>
               <option value="manual">{t(locale, 'manual')}</option>
             </select>
           </label>

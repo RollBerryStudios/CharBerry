@@ -19,6 +19,8 @@ export interface CharacterSpell {
   id: string
   level: number
   name: string
+  damage: string
+  range: string
   prepared: boolean
   notes: string
 }
@@ -64,6 +66,7 @@ export interface CharacterSheet {
   hitDice: string
   inspiration: boolean
   portraitDataUrl: string
+  portraitZoom: number
   attacks: CharacterAttack[]
   spells: CharacterSpell[]
   inventory: string

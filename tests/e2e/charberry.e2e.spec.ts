@@ -26,7 +26,7 @@ test.describe('CharBerry Electron QA', () => {
   test('covers every sheet tab with stable desktop screenshots and no layout collisions', async ({}, testInfo) => {
     const { app, page } = await launchCharBerry(testInfo)
     try {
-      const tabs = ['Overview', 'Combat', 'Skills', 'Story', 'Notes']
+      const tabs = ['Overview', 'Combat', 'Skills', 'Story', 'Inventory', 'Notes']
       for (const tab of tabs) {
         await page.getByRole('button', { name: tab }).click()
         await assertVisibleLayout(page)
@@ -40,10 +40,11 @@ test.describe('CharBerry Electron QA', () => {
       await page.getByRole('button', { name: 'Skills' }).click()
       await expect(page.locator('.save-row')).toHaveCount(6)
       await expect(page.locator('.skill-row')).toHaveCount(18)
-      await page.getByRole('button', { name: 'Notes' }).click()
+      await page.getByRole('button', { name: 'Inventory' }).click()
       await expect(page.getByRole('heading', { name: 'Inventory' })).toBeVisible()
-      await expect(page.getByRole('heading', { name: 'Session Notes' })).toBeVisible()
       await expect(page.locator('.inventory-row')).toHaveCount(3)
+      await page.getByRole('button', { name: 'Notes' }).click()
+      await expect(page.getByRole('heading', { name: 'Session Notes' })).toBeVisible()
       await expect(page.locator('.session-note')).toHaveCount(1)
     } finally {
       await app.close()

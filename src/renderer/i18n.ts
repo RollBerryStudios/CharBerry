@@ -5,17 +5,19 @@ type Key =
   | 'settings' | 'appearance' | 'theme' | 'darkMode' | 'lightMode' | 'community' | 'githubRepo'
   | 'rollberryTitle' | 'rollberryInfo' | 'rollberryGithub'
   | 'new' | 'wizard' | 'searchCharacters' | 'delete' | 'duplicate' | 'exportCharacter'
-  | 'importDdb' | 'exportDdb' | 'setPortrait' | 'removePortrait' | 'overview' | 'combat'
+  | 'importDdb' | 'exportDdb' | 'setPortrait' | 'removePortrait' | 'portraitEditor' | 'zoom' | 'overview' | 'combat'
   | 'skills' | 'story' | 'notes' | 'name' | 'ancestry' | 'class' | 'subclass' | 'level'
   | 'background' | 'proficiency' | 'initiative' | 'passivePerception' | 'passiveInsight'
   | 'spellDc' | 'spellAttack' | 'abilityScores' | 'vitals' | 'armorClass' | 'speed'
   | 'hitDice' | 'currentHp' | 'maxHp' | 'tempHp' | 'alignment' | 'xp' | 'inspiration'
-  | 'attacks' | 'addAttack' | 'spells' | 'addSpell' | 'spellcastingAbility' | 'prepared'
+  | 'attacks' | 'addAttack' | 'attackName' | 'attackBonus' | 'attackDamage' | 'attackType' | 'attackRange' | 'attackNotes'
+  | 'spells' | 'addSpell' | 'spellName' | 'spellLevel' | 'spellDamage' | 'spellRange' | 'spellNotes' | 'spellcastingAbility' | 'prepared'
   | 'savingThrows' | 'none' | 'proficient' | 'expertise' | 'personality' | 'ideals'
   | 'bonds' | 'flaws' | 'backstory' | 'features' | 'inventory' | 'sessionNotes'
-  | 'addItem' | 'addNote' | 'quantity' | 'weight' | 'value' | 'equipped' | 'itemNotes'
+  | 'addItem' | 'addNote' | 'itemName' | 'quantity' | 'weight' | 'value' | 'equipped' | 'itemNotes'
   | 'currency' | 'totalWeight' | 'totalValue' | 'title' | 'date' | 'tags' | 'body'
-  | 'characterCreator' | 'abilityMethod' | 'standardArray' | 'manual' | 'applyTemplate'
+  | 'coinCopper' | 'coinSilver' | 'coinElectrum' | 'coinGold' | 'coinPlatinum'
+  | 'characterCreator' | 'abilityMethod' | 'standardArray' | 'pointBuy' | 'manual' | 'customOption' | 'applyTemplate'
   | 'close' | 'libraryImported' | 'importInvalid' | 'importFailed' | 'portraitImported'
   | 'portraitFailed' | 'ddbImported' | 'ddbUnsupported' | 'actionMenu' | 'contextHint'
   | 'newItem' | 'sessionNote' | 'copySuffix' | 'deleteCharacterDetail' | 'newAttack'
@@ -52,6 +54,8 @@ const EN: Record<Key, string> = {
   exportDdb: 'Export Bridge JSON',
   setPortrait: 'Set portrait',
   removePortrait: 'Remove portrait',
+  portraitEditor: 'Portrait mask',
+  zoom: 'Zoom',
   overview: 'Overview',
   combat: 'Combat',
   skills: 'Skills',
@@ -82,8 +86,19 @@ const EN: Record<Key, string> = {
   inspiration: 'Inspiration',
   attacks: 'Attacks',
   addAttack: 'Add Attack',
+  attackName: 'Name',
+  attackBonus: 'Bonus',
+  attackDamage: 'Damage',
+  attackType: 'Type',
+  attackRange: 'Range',
+  attackNotes: 'Notes',
   spells: 'Spells',
   addSpell: 'Add Spell',
+  spellName: 'Name',
+  spellLevel: 'Level',
+  spellDamage: 'Damage / Effect',
+  spellRange: 'Range',
+  spellNotes: 'Description / Notes',
   spellcastingAbility: 'Spellcasting Ability',
   prepared: 'Prepared',
   savingThrows: 'Saving Throws',
@@ -100,6 +115,7 @@ const EN: Record<Key, string> = {
   sessionNotes: 'Session Notes',
   addItem: 'Add Item',
   addNote: 'Add Note',
+  itemName: 'Item',
   quantity: 'Qty',
   weight: 'Weight',
   value: 'Value',
@@ -108,6 +124,11 @@ const EN: Record<Key, string> = {
   currency: 'Currency',
   totalWeight: 'Total weight',
   totalValue: 'Total value',
+  coinCopper: 'Copper',
+  coinSilver: 'Silver',
+  coinElectrum: 'Electrum',
+  coinGold: 'Gold',
+  coinPlatinum: 'Platinum',
   title: 'Title',
   date: 'Date',
   tags: 'Tags',
@@ -115,7 +136,9 @@ const EN: Record<Key, string> = {
   characterCreator: 'SRD Character Creator',
   abilityMethod: 'Ability Method',
   standardArray: 'Standard Array',
+  pointBuy: 'Point Buy',
   manual: 'Manual',
+  customOption: 'Custom',
   applyTemplate: 'Apply Template',
   close: 'Close',
   libraryImported: 'Library imported',
@@ -165,6 +188,8 @@ const DE: Record<Key, string> = {
   exportDdb: 'Bridge-JSON exportieren',
   setPortrait: 'Portrait festlegen',
   removePortrait: 'Portrait entfernen',
+  portraitEditor: 'Portrait-Maske',
+  zoom: 'Zoom',
   overview: 'Übersicht',
   combat: 'Kampf',
   skills: 'Fertigkeiten',
@@ -195,8 +220,19 @@ const DE: Record<Key, string> = {
   inspiration: 'Inspiration',
   attacks: 'Angriffe',
   addAttack: 'Angriff hinzufügen',
+  attackName: 'Name',
+  attackBonus: 'Bonus',
+  attackDamage: 'Schaden',
+  attackType: 'Art',
+  attackRange: 'Reichweite',
+  attackNotes: 'Notizen',
   spells: 'Zauber',
   addSpell: 'Zauber hinzufügen',
+  spellName: 'Name',
+  spellLevel: 'Grad',
+  spellDamage: 'Schaden / Effekt',
+  spellRange: 'Reichweite',
+  spellNotes: 'Beschreibung / Notizen',
   spellcastingAbility: 'Zauberattribut',
   prepared: 'Vorbereitet',
   savingThrows: 'Rettungswürfe',
@@ -213,6 +249,7 @@ const DE: Record<Key, string> = {
   sessionNotes: 'Sitzungsnotizen',
   addItem: 'Gegenstand hinzufügen',
   addNote: 'Notiz hinzufügen',
+  itemName: 'Gegenstand',
   quantity: 'Anz.',
   weight: 'Gewicht',
   value: 'Wert',
@@ -221,6 +258,11 @@ const DE: Record<Key, string> = {
   currency: 'Währung',
   totalWeight: 'Gesamtgewicht',
   totalValue: 'Gesamtwert',
+  coinCopper: 'Kupferstücke',
+  coinSilver: 'Silberstücke',
+  coinElectrum: 'Elektrumstücke',
+  coinGold: 'Goldstücke',
+  coinPlatinum: 'Platinstücke',
   title: 'Titel',
   date: 'Datum',
   tags: 'Tags',
@@ -228,7 +270,9 @@ const DE: Record<Key, string> = {
   characterCreator: 'SRD-Charakter-Assistent',
   abilityMethod: 'Attributsmethode',
   standardArray: 'Standardwerte',
+  pointBuy: 'Punktkauf',
   manual: 'Manuell',
+  customOption: 'Eigene',
   applyTemplate: 'Assistent anwenden',
   close: 'Schließen',
   libraryImported: 'Bibliothek importiert',
@@ -346,6 +390,15 @@ const BACKGROUND_LABELS: Record<Locale, Record<string, string>> = {
     Soldier: 'Soldat',
     Urchin: 'Straßenkind',
   },
+}
+
+const ABILITY_LABELS: Record<Locale, Record<string, string>> = {
+  en: { str: 'STR', dex: 'DEX', con: 'CON', int: 'INT', wis: 'WIS', cha: 'CHA' },
+  de: { str: 'STÄ', dex: 'GES', con: 'KON', int: 'INT', wis: 'WEI', cha: 'CHA' },
+}
+
+export function abilityLabel(locale: Locale, key: string): string {
+  return ABILITY_LABELS[locale][key] ?? key.toUpperCase()
 }
 
 export function skillLabel(locale: Locale, key: string): string {

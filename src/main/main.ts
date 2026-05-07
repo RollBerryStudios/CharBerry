@@ -21,6 +21,8 @@ interface CharacterSpell {
   id: string
   level: number
   name: string
+  damage: string
+  range: string
   prepared: boolean
   notes: string
 }
@@ -66,6 +68,7 @@ interface CharacterSheet {
   hitDice: string
   inspiration: boolean
   portraitDataUrl: string
+  portraitZoom: number
   attacks: CharacterAttack[]
   spells: CharacterSpell[]
   inventory: string
@@ -213,6 +216,8 @@ function normalizeSpell(value: unknown): CharacterSpell | null {
     id: text(parsed.id, makeId()),
     level: clampInt(parsed.level, 0, 9, 0),
     name: text(parsed.name, 'Spell'),
+    damage: text(parsed.damage),
+    range: text(parsed.range),
     prepared: Boolean(parsed.prepared),
     notes: text(parsed.notes),
   }
@@ -287,6 +292,7 @@ function emptyCharacter(): CharacterSheet {
     hitDice: '1d10',
     inspiration: false,
     portraitDataUrl: '',
+    portraitZoom: 1,
     attacks: [{ id: makeId(), name: 'Longsword', bonus: '+4', damage: '1d8+2', damageType: 'slashing', range: '5 ft', notes: '' }],
     spells: [],
     inventory: 'Explorer pack, shield, longsword',
@@ -338,6 +344,9 @@ function normalizeCharacter(value: unknown): CharacterSheet | null {
     hitDice: text(parsed.hitDice),
     inspiration: Boolean(parsed.inspiration),
     portraitDataUrl: text(parsed.portraitDataUrl),
+    portraitZoom: typeof parsed.portraitZoom === 'number' && Number.isFinite(parsed.portraitZoom)
+      ? Math.max(1, Math.min(2.5, parsed.portraitZoom))
+      : 1,
     attacks: Array.isArray(parsed.attacks) ? parsed.attacks.map(normalizeAttack).filter(Boolean) as CharacterAttack[] : [],
     spells: Array.isArray(parsed.spells) ? parsed.spells.map(normalizeSpell).filter(Boolean) as CharacterSpell[] : [],
     inventory: text(parsed.inventory),
@@ -379,8 +388,8 @@ function defaultLibrary(): CharacterLibrary {
     { id: makeId(), name: 'Shortsword', bonus: '+7', damage: '1d6+4', damageType: 'piercing', range: '5 ft', notes: '' },
   ]
   character.spells = [
-    { id: makeId(), level: 1, name: 'Hunter mark', prepared: true, notes: 'Bonus action concentration.' },
-    { id: makeId(), level: 2, name: 'Pass without trace', prepared: true, notes: '+10 stealth aura.' },
+    { id: makeId(), level: 1, name: 'Hunter mark', damage: '1d6', range: '90 ft', prepared: true, notes: 'Bonus action concentration.' },
+    { id: makeId(), level: 2, name: 'Pass without trace', damage: '', range: 'Self', prepared: true, notes: '+10 stealth aura.' },
   ]
   character.features = 'Favored Enemy, Natural Explorer, Extra Attack'
   character.notes = 'Tracks enemy movement and carries party navigation details.'
