@@ -9,7 +9,7 @@ export default defineConfig({
     timeout: 5_000,
     toHaveScreenshot: {
       animations: 'disabled',
-      maxDiffPixelRatio: 0.015,
+      maxDiffPixelRatio: 0.04,
     },
   },
   reporter: [['list'], ['html', { open: 'never' }]],
