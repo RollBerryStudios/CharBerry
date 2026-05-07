@@ -498,7 +498,7 @@ export default function App() {
           </div>
         </div>
         <div className="titlebar-actions">
-          <button onClick={() => setSettingsOpen(true)}>{t(locale, 'settings')}</button>
+          <button className="icon-button settings-trigger" aria-label={t(locale, 'settings')} title={t(locale, 'settings')} onClick={() => setSettingsOpen(true)}>⚙</button>
           <button onClick={() => setCreatorOpen(true)}>{t(locale, 'wizard')}</button>
           <details className="action-menu">
             <summary>{t(locale, 'dataActions')}</summary>
@@ -735,18 +735,24 @@ export default function App() {
             <div className="settings-grid">
               <section>
                 <h3>{t(locale, 'appearance')}</h3>
-                <label>{t(locale, 'language')}
-                  <select aria-label={t(locale, 'language')} value={locale} onChange={(event) => setLocale(event.target.value as Locale)}>
-                    <option value="de">Deutsch</option>
-                    <option value="en">English</option>
-                  </select>
-                </label>
-                <label>{t(locale, 'theme')}
-                  <select aria-label={t(locale, 'theme')} value={theme} onChange={(event) => setTheme(event.target.value as Theme)}>
-                    <option value="dark">{t(locale, 'darkMode')}</option>
-                    <option value="light">{t(locale, 'lightMode')}</option>
-                  </select>
-                </label>
+                <SegmentedChoice
+                  label={t(locale, 'language')}
+                  value={locale}
+                  options={[
+                    { value: 'de', label: 'Deutsch' },
+                    { value: 'en', label: 'English' },
+                  ]}
+                  onChange={(value) => setLocale(value as Locale)}
+                />
+                <SegmentedChoice
+                  label={t(locale, 'theme')}
+                  value={theme}
+                  options={[
+                    { value: 'dark', label: t(locale, 'darkMode') },
+                    { value: 'light', label: t(locale, 'lightMode') },
+                  ]}
+                  onChange={(value) => setTheme(value as Theme)}
+                />
               </section>
               <section>
                 <h3>{t(locale, 'community')}</h3>
@@ -791,6 +797,40 @@ export default function App() {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return <div className="stat"><span>{label}</span><strong>{value}</strong></div>
+}
+
+function SegmentedChoice<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string
+  value: T
+  options: Array<{ value: T; label: string }>
+  onChange: (value: T) => void
+}) {
+  return (
+    <label className="setting-choice">
+      <span>{label}</span>
+      <select aria-label={label} value={value} onChange={(event) => onChange(event.target.value as T)}>
+        {options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+      </select>
+      <span className="segmented-control" role="group">
+        {options.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            className={option.value === value ? 'active' : ''}
+            aria-pressed={option.value === value}
+            onClick={() => onChange(option.value)}
+          >
+            {option.label}
+          </button>
+        ))}
+      </span>
+    </label>
+  )
 }
 
 function TextCard({ title, value, onChange, large = false }: { title: string; value: string; onChange: (value: string) => void; large?: boolean }) {
