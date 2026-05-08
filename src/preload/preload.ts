@@ -67,6 +67,8 @@ export interface CharacterSheet {
   inspiration: boolean
   portraitDataUrl: string
   portraitZoom: number
+  portraitOffsetX: number
+  portraitOffsetY: number
   attacks: CharacterAttack[]
   spells: CharacterSpell[]
   inventory: string

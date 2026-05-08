@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { MouseEvent } from 'react'
 import type { AbilityKey, CharacterAttack, CharacterInventoryItem, CharacterLibrary, CharacterSessionNote, CharacterSheet, CharacterSpell, Locale, SkillRank, Theme } from '../preload/preload'
 import logoUrl from '../../resources/logo.png'
-import { abilityLabel, backgroundLabel, classLabel, skillLabel, speciesLabel, t, type TranslationKey } from './i18n'
+import { abilityLabel, backgroundLabel, classLabel, featureLabel, skillLabel, speciesLabel, t, type TranslationKey } from './i18n'
 import { applySkillPicks, backgroundByName, classByName, speciesByName, SRD_BACKGROUNDS, SRD_CLASSES, SRD_SPECIES, STANDARD_ARRAY } from './rules/srd'
 
 type TabId = 'overview' | 'combat' | 'skills' | 'story' | 'inventory' | 'notes'
@@ -58,6 +58,7 @@ interface CreatorDraft {
   background: string
   level: number
   abilityMethod: 'standard' | 'pointBuy' | 'manual'
+  pointBuyScores: Record<AbilityKey, number>
 }
 
 interface ContextMenuState {
@@ -133,6 +134,8 @@ function emptyCharacter(): CharacterSheet {
     inspiration: false,
     portraitDataUrl: '',
     portraitZoom: 1,
+    portraitOffsetX: 0,
+    portraitOffsetY: 0,
     attacks: [],
     spells: [],
     inventory: '',
@@ -193,12 +196,27 @@ function newSessionNote(locale: Locale = 'en'): CharacterSessionNote {
   return { id: newId(), date: today(), title: t(locale, 'sessionNote'), body: '', tags: [] }
 }
 
+const POINT_BUY_BUDGET = 27
+const POINT_BUY_COST: Record<number, number> = { 8: 0, 9: 1, 10: 2, 11: 3, 12: 4, 13: 5, 14: 7, 15: 9 }
+
 function suggestedStandardScores(primary: AbilityKey[]): Record<AbilityKey, number> {
   const order: AbilityKey[] = [...primary, 'con', 'dex', 'wis', 'int', 'str', 'cha']
   const unique = Array.from(new Set(order)) as AbilityKey[]
   const scores = { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 }
   unique.slice(0, 6).forEach((ability, index) => { scores[ability] = STANDARD_ARRAY[index] ?? 10 })
   return scores
+}
+
+function pointBuyCost(scores: Record<AbilityKey, number>): number {
+  return ABILITIES.reduce((sum, ability) => sum + POINT_BUY_COST[Math.max(8, Math.min(15, scores[ability.key]))], 0)
+}
+
+function portraitTransform(character: CharacterSheet): string {
+  return `translate(${character.portraitOffsetX ?? 0}%, ${character.portraitOffsetY ?? 0}%) scale(${character.portraitZoom ?? 1})`
+}
+
+function localizedFeatures(locale: Locale, features: string[]): string {
+  return features.map((feature) => featureLabel(locale, feature)).join(', ')
 }
 
 function suggestedPointBuyScores(primary: AbilityKey[]): Record<AbilityKey, number> {
@@ -410,7 +428,7 @@ export default function App() {
       notify(t(locale, 'portraitFailed'))
       return
     }
-    updateActive({ portraitDataUrl: dataUrl, portraitZoom: 1 })
+    updateActive({ portraitDataUrl: dataUrl, portraitZoom: 1, portraitOffsetX: 0, portraitOffsetY: 0 })
     setPortraitEditorOpen(true)
     notify(t(locale, 'portraitImported'))
   }
@@ -474,7 +492,7 @@ export default function App() {
     const abilityScores = draft.abilityMethod === 'standard'
       ? suggestedStandardScores(srdClass.primary)
       : draft.abilityMethod === 'pointBuy'
-        ? suggestedPointBuyScores(srdClass.primary)
+        ? draft.pointBuyScores
         : activeCharacter.abilityScores
     const savingThrows = { str: false, dex: false, con: false, int: false, wis: false, cha: false } as Record<AbilityKey, boolean>
     for (const ability of srdClass.savingThrows) savingThrows[ability] = true
@@ -493,7 +511,7 @@ export default function App() {
       hpMax: Math.max(1, Number(srdClass.hitDie.replace('1d', '')) + modifier(abilityScores.con)),
       hpCurrent: Math.max(1, Number(srdClass.hitDie.replace('1d', '')) + modifier(abilityScores.con)),
       speed: species.speed,
-      features: [...srdClass.features, ...species.features, ...background.features].join(', '),
+      features: localizedFeatures(locale, [...srdClass.features, ...species.features, ...background.features]),
     })
     setCreatorOpen(false)
     setTab('overview')
@@ -551,7 +569,7 @@ export default function App() {
               >
                 <span className="avatar">
                   {character.portraitDataUrl
-                    ? <img src={character.portraitDataUrl} alt="" style={{ transform: `scale(${character.portraitZoom ?? 1})` }} />
+                    ? <img src={character.portraitDataUrl} alt="" style={{ transform: portraitTransform(character) }} />
                     : character.name.slice(0, 2).toUpperCase()}
                 </span>
                 <span>
@@ -572,7 +590,7 @@ export default function App() {
               aria-label={activeCharacter.portraitDataUrl ? t(locale, 'portraitEditor') : t(locale, 'setPortrait')}
             >
               {activeCharacter.portraitDataUrl
-                ? <img src={activeCharacter.portraitDataUrl} alt="" style={{ transform: `scale(${activeCharacter.portraitZoom ?? 1})` }} />
+                ? <img src={activeCharacter.portraitDataUrl} alt="" style={{ transform: portraitTransform(activeCharacter) }} />
                 : activeCharacter.name.slice(0, 1).toUpperCase()}
             </button>
             <div className="identity-grid">
@@ -770,7 +788,7 @@ export default function App() {
             </div>
             <div className="portrait-mask">
               {activeCharacter.portraitDataUrl
-                ? <img src={activeCharacter.portraitDataUrl} alt="" style={{ transform: `scale(${activeCharacter.portraitZoom ?? 1})` }} />
+                ? <img src={activeCharacter.portraitDataUrl} alt="" style={{ transform: portraitTransform(activeCharacter) }} />
                 : activeCharacter.name.slice(0, 1).toUpperCase()}
             </div>
             <label>{t(locale, 'zoom')}
@@ -784,7 +802,29 @@ export default function App() {
               />
             </label>
             <button onClick={importPortrait}>{t(locale, 'setPortrait')}</button>
-            {activeCharacter.portraitDataUrl && <button className="danger" onClick={() => updateActive({ portraitDataUrl: '', portraitZoom: 1 })}>{t(locale, 'removePortrait')}</button>}
+            <div className="portrait-offset-grid">
+              <label>{t(locale, 'offsetX')}
+                <input
+                  type="range"
+                  min={-50}
+                  max={50}
+                  step={1}
+                  value={activeCharacter.portraitOffsetX ?? 0}
+                  onChange={(event) => updateActive({ portraitOffsetX: numberValue(event.target.value, 0) })}
+                />
+              </label>
+              <label>{t(locale, 'offsetY')}
+                <input
+                  type="range"
+                  min={-50}
+                  max={50}
+                  step={1}
+                  value={activeCharacter.portraitOffsetY ?? 0}
+                  onChange={(event) => updateActive({ portraitOffsetY: numberValue(event.target.value, 0) })}
+                />
+              </label>
+            </div>
+            {activeCharacter.portraitDataUrl && <button className="danger" onClick={() => updateActive({ portraitDataUrl: '', portraitZoom: 1, portraitOffsetX: 0, portraitOffsetY: 0 })}>{t(locale, 'removePortrait')}</button>}
           </section>
         </div>
       )}
@@ -1013,6 +1053,7 @@ function CharacterCreator({ locale, activeCharacter, onApply, onClose }: { local
     background: activeCharacter.background || SRD_BACKGROUNDS[0].name,
     level: activeCharacter.level,
     abilityMethod: 'standard',
+    pointBuyScores: suggestedPointBuyScores(classByName(activeCharacter.className || SRD_CLASSES[4].name).primary),
   })
   const pickedClass = classByName(draft.className)
   const pickedSpecies = speciesByName(draft.ancestry)
@@ -1020,6 +1061,24 @@ function CharacterCreator({ locale, activeCharacter, onApply, onClose }: { local
   const knownSpecies = SRD_SPECIES.some((item) => item.name === draft.ancestry)
   const knownClass = SRD_CLASSES.some((item) => item.name === draft.className)
   const knownBackground = SRD_BACKGROUNDS.some((item) => item.name === draft.background)
+  const pointBuySpent = pointBuyCost(draft.pointBuyScores)
+  const pointBuyRemaining = POINT_BUY_BUDGET - pointBuySpent
+
+  function setClassName(className: string): void {
+    setDraft({
+      ...draft,
+      className,
+      pointBuyScores: suggestedPointBuyScores(classByName(className).primary),
+    })
+  }
+
+  function updatePointBuyScore(key: AbilityKey, value: number): void {
+    setDraft({
+      ...draft,
+      pointBuyScores: { ...draft.pointBuyScores, [key]: Math.max(8, Math.min(15, value)) },
+    })
+  }
+
   return (
     <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={t(locale, 'characterCreator')}>
       <section className="wizard-modal">
@@ -1037,11 +1096,11 @@ function CharacterCreator({ locale, activeCharacter, onApply, onClose }: { local
             {!knownSpecies && <input value={draft.ancestry} onChange={(event) => setDraft({ ...draft, ancestry: event.target.value })} />}
           </label>
           <label>{t(locale, 'class')}
-            <select value={knownClass ? draft.className : '__custom__'} onChange={(event) => setDraft({ ...draft, className: event.target.value === '__custom__' ? '' : event.target.value })}>
+            <select value={knownClass ? draft.className : '__custom__'} onChange={(event) => setClassName(event.target.value === '__custom__' ? '' : event.target.value)}>
               {SRD_CLASSES.map((item) => <option key={item.name} value={item.name}>{classLabel(locale, item.name)}</option>)}
               <option value="__custom__">{t(locale, 'customOption')}</option>
             </select>
-            {!knownClass && <input value={draft.className} onChange={(event) => setDraft({ ...draft, className: event.target.value })} />}
+            {!knownClass && <input value={draft.className} onChange={(event) => setClassName(event.target.value)} />}
           </label>
           <label>{t(locale, 'background')}
             <select value={knownBackground ? draft.background : '__custom__'} onChange={(event) => setDraft({ ...draft, background: event.target.value === '__custom__' ? '' : event.target.value })}>
@@ -1059,13 +1118,26 @@ function CharacterCreator({ locale, activeCharacter, onApply, onClose }: { local
             </select>
           </label>
         </div>
+        {draft.abilityMethod === 'pointBuy' && (
+          <div className={`point-buy-panel ${pointBuyRemaining < 0 ? 'invalid' : ''}`}>
+            <strong>{t(locale, 'pointsRemaining')}: {pointBuyRemaining}</strong>
+            <div className="point-buy-grid">
+              {ABILITIES.map((ability) => (
+                <label key={ability.key}>{abilityLabel(locale, ability.key)}
+                  <input type="number" min={8} max={15} value={draft.pointBuyScores[ability.key]} onChange={(event) => updatePointBuyScore(ability.key, numberValue(event.target.value, 8))} />
+                  <em>{POINT_BUY_COST[draft.pointBuyScores[ability.key]] ?? 0}</em>
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
         <div className="wizard-preview">
           <span>{pickedClass.hitDie}</span>
           <span>{pickedSpecies.speed} ft</span>
           <span>{classLabel(locale, pickedClass.name)} / {speciesLabel(locale, pickedSpecies.name)} / {backgroundLabel(locale, pickedBackground.name)}</span>
-          <span>{[...pickedClass.features, ...pickedSpecies.features, ...pickedBackground.features].join(', ')}</span>
+          <span>{localizedFeatures(locale, [...pickedClass.features, ...pickedSpecies.features, ...pickedBackground.features])}</span>
         </div>
-        <button className="primary wizard-apply" onClick={() => onApply(draft)}>{t(locale, 'applyTemplate')}</button>
+        <button className="primary wizard-apply" disabled={draft.abilityMethod === 'pointBuy' && pointBuyRemaining < 0} onClick={() => onApply(draft)}>{t(locale, 'applyTemplate')}</button>
       </section>
     </div>
   )

@@ -119,12 +119,12 @@ test.describe('CharBerry Electron QA', () => {
       await page.getByLabel('Level', { exact: true }).fill('3')
       await page.getByRole('button', { name: 'Combat' }).click()
       await page.getByRole('button', { name: 'Add Attack' }).click()
-      await page.getByLabel('Attack name').fill('Fire Bolt')
-      await page.getByLabel('Attack bonus').fill('+5')
-      await page.getByLabel('Attack damage').fill('1d10')
+      await page.locator('.attack-row').last().locator('label', { hasText: 'Name' }).locator('input').fill('Fire Bolt')
+      await page.locator('.attack-row').last().locator('label', { hasText: 'Bonus' }).locator('input').fill('+5')
+      await page.locator('.attack-row').last().locator('label', { hasText: 'Damage' }).locator('input').fill('1d10')
       await page.getByRole('button', { name: 'Add Spell' }).click()
-      await page.getByLabel('Spell name').fill('Shield')
-      await page.getByLabel('Spell level').fill('1')
+      await page.locator('.spell-row').last().locator('label', { hasText: 'Name' }).locator('input').fill('Shield')
+      await page.locator('.spell-row').last().locator('label', { hasText: 'Level' }).locator('input').fill('1')
 
       await expect.poll(() => {
         const saved = readSavedLibrary(libraryPath)
@@ -146,6 +146,30 @@ test.describe('CharBerry Electron QA', () => {
     await page.getByLabel('Name').fill('Quick Close Ranger')
     await app.close()
     expect(readSavedLibrary(libraryPath).characters[0].name).toBe('Quick Close Ranger')
+  })
+
+  test('opens the circular portrait mask with zoom and position controls', async ({}, testInfo) => {
+    const library = sampleLibrary()
+    library.characters[0].portraitDataUrl = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><rect width="120" height="120" fill="%23b84f61"/><circle cx="78" cy="44" r="32" fill="%23ffe8ae"/></svg>'
+    const { app, page, libraryPath } = await launchCharBerry(testInfo, { library })
+    try {
+      await page.getByRole('button', { name: 'Portrait mask' }).click()
+      await expect(page.getByRole('dialog', { name: 'Portrait mask' })).toBeVisible()
+      await expect(page.getByLabel('Zoom')).toBeVisible()
+      await expect(page.getByLabel('Horizontal position')).toBeVisible()
+      await expect(page.getByLabel('Vertical position')).toBeVisible()
+      await setRange(page, 'Zoom', 1.5)
+      await setRange(page, 'Horizontal position', 12)
+      await setRange(page, 'Vertical position', -10)
+      await expect(page.locator('.portrait-mask img')).toHaveCSS('transform', /matrix/)
+      await page.getByRole('button', { name: 'Close' }).click()
+      await expect.poll(() => {
+        const active = readSavedLibrary(libraryPath).characters[0]
+        return { zoom: active.portraitZoom, x: active.portraitOffsetX, y: active.portraitOffsetY }
+      }).toEqual({ zoom: 1.5, x: 12, y: -10 })
+    } finally {
+      await app.close()
+    }
   })
 
   test('edits story, notes, vitals, inspiration, saving throws, and spellcasting ability', async ({}, testInfo) => {
@@ -173,12 +197,13 @@ test.describe('CharBerry Electron QA', () => {
       await assertNoUnexpectedOverlaps(page)
       await expect(page).toHaveScreenshot('charberry-story-edited-desktop.png', { fullPage: true })
 
-      await page.getByRole('button', { name: 'Notes' }).click()
+      await page.getByRole('button', { name: 'Inventory' }).click()
       await page.getByRole('button', { name: 'Add Item' }).click()
-      await page.getByLabel('Item name').last().fill('Compass')
-      await page.getByLabel('Item quantity').last().fill('2')
-      await page.getByLabel('Item weight').last().fill('1.5')
-      await page.getByLabel('Item value').last().fill('75 gp')
+      await page.locator('.inventory-row').last().locator('label', { hasText: 'Item' }).locator('input').fill('Compass')
+      await page.locator('.inventory-row').last().locator('label', { hasText: 'Qty' }).locator('input').fill('2')
+      await page.locator('.inventory-row').last().locator('label', { hasText: 'Weight' }).locator('input').fill('1.5')
+      await page.locator('.inventory-row').last().locator('label', { hasText: 'Value' }).locator('input').fill('75 gp')
+      await page.getByRole('button', { name: 'Notes' }).click()
       await page.getByRole('button', { name: 'Add Note' }).click()
       await page.getByLabel('Session note title').first().fill('Ash arrowheads')
       await page.getByLabel('Session note body').first().fill('Ask the smith about the ash-covered arrowheads.')
@@ -230,6 +255,7 @@ test.describe('CharBerry Electron QA', () => {
         attacks: [{ id: 4, name: 10 }],
         spells: [{ level: 12, prepared: 1 }],
       }],
+      settings: { locale: 'en', theme: 'dark' },
     } as never
     const { app, page, libraryPath } = await launchCharBerry(testInfo, { library: damaged })
     try {
@@ -299,21 +325,25 @@ test.describe('CharBerry Electron QA', () => {
       await expect(page.getByRole('button', { name: 'Bridge-JSON exportieren' })).toBeVisible()
       await page.locator('.action-menu summary').click()
       await page.getByRole('button', { name: 'Assistent' }).click()
-      await expect(page.getByRole('dialog', { name: 'Charakter-Assistent' })).toBeVisible()
+      await expect(page.getByRole('dialog', { name: /Charakter-Assistent/ })).toBeVisible()
       await page.getByRole('dialog').locator('select').nth(1).selectOption('Wizard')
       await page.getByRole('dialog').locator('select').nth(0).selectOption('Elf')
       await page.getByRole('dialog').locator('select').nth(2).selectOption('Sage')
+      await page.getByLabel('Attributsmethode').selectOption('pointBuy')
+      await expect(page.locator('.point-buy-panel')).toContainText('Punkte übrig: 0')
+      await expect(page.locator('.wizard-preview')).toContainText('Zauberwirken')
       await page.getByRole('button', { name: 'Assistent anwenden' }).click()
       await expect(page.getByLabel('Class', { exact: true })).toHaveValue('Wizard')
       await expect(page.getByLabel('Ancestry')).toHaveValue('Elf')
 
-      await page.getByRole('button', { name: 'Notizen' }).click()
+      await page.getByRole('button', { name: 'Inventar' }).click()
       await page.getByRole('button', { name: 'Gegenstand hinzufügen' }).click()
-      await page.getByLabel('Item name').last().fill('Spellbook')
-      await page.getByLabel('Item name').last().click({ button: 'right' })
+      await page.locator('.inventory-row').last().locator('label', { hasText: 'Gegenstand' }).locator('input').fill('Spellbook')
+      await page.locator('.inventory-row').last().locator('label', { hasText: 'Gegenstand' }).locator('input').click({ button: 'right' })
       await expect(page.getByRole('menu', { name: 'Aktionsmenü' })).toBeVisible()
       await page.getByRole('button', { name: 'Duplizieren' }).click()
-      await expect.poll(() => page.getByLabel('Item name').evaluateAll((inputs) => inputs.filter((input) => (input as HTMLInputElement).value === 'Spellbook').length)).toBe(2)
+      await expect.poll(() => page.locator('.inventory-row label', { hasText: 'Gegenstand' }).locator('input').evaluateAll((inputs) => inputs.filter((input) => (input as HTMLInputElement).value === 'Spellbook').length)).toBe(2)
+      await page.getByRole('button', { name: 'Notizen' }).click()
       await page.getByRole('button', { name: 'Notiz hinzufügen' }).click()
       await page.getByLabel('Session note title').first().fill('Erste Sitzung')
       await assertVisibleLayout(page)
@@ -328,10 +358,11 @@ test.describe('CharBerry Electron QA', () => {
           theme: saved.settings?.theme,
           className: active.className,
           ancestry: active.ancestry,
+          features: active.features,
           spellbooks: active.inventoryItems.filter((item) => item.name === 'Spellbook').length,
           note: active.sessionNotes[0]?.title,
         }
-      }).toEqual({ locale: 'de', theme: 'dark', className: 'Wizard', ancestry: 'Elf', spellbooks: 2, note: 'Erste Sitzung' })
+      }).toEqual({ locale: 'de', theme: 'dark', className: 'Wizard', ancestry: 'Elf', features: expect.stringContaining('Zauberwirken'), spellbooks: 2, note: 'Erste Sitzung' })
     } finally {
       await app.close()
     }
@@ -394,6 +425,16 @@ async function assertVisibleLayout(page: import('@playwright/test').Page): Promi
     return result
   })
   expect(failures).toEqual([])
+}
+
+async function setRange(page: import('@playwright/test').Page, label: string, value: number): Promise<void> {
+  await page.getByLabel(label).evaluate((input, nextValue) => {
+    const range = input as HTMLInputElement
+    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set
+    setter?.call(range, String(nextValue))
+    range.dispatchEvent(new Event('input', { bubbles: true }))
+    range.dispatchEvent(new Event('change', { bubbles: true }))
+  }, value)
 }
 
 async function assertNoUnexpectedOverlaps(page: import('@playwright/test').Page): Promise<void> {

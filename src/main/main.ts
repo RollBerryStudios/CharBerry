@@ -69,6 +69,8 @@ interface CharacterSheet {
   inspiration: boolean
   portraitDataUrl: string
   portraitZoom: number
+  portraitOffsetX: number
+  portraitOffsetY: number
   attacks: CharacterAttack[]
   spells: CharacterSpell[]
   inventory: string
@@ -293,6 +295,8 @@ function emptyCharacter(): CharacterSheet {
     inspiration: false,
     portraitDataUrl: '',
     portraitZoom: 1,
+    portraitOffsetX: 0,
+    portraitOffsetY: 0,
     attacks: [{ id: makeId(), name: 'Longsword', bonus: '+4', damage: '1d8+2', damageType: 'slashing', range: '5 ft', notes: '' }],
     spells: [],
     inventory: 'Explorer pack, shield, longsword',
@@ -347,6 +351,12 @@ function normalizeCharacter(value: unknown): CharacterSheet | null {
     portraitZoom: typeof parsed.portraitZoom === 'number' && Number.isFinite(parsed.portraitZoom)
       ? Math.max(1, Math.min(2.5, parsed.portraitZoom))
       : 1,
+    portraitOffsetX: typeof parsed.portraitOffsetX === 'number' && Number.isFinite(parsed.portraitOffsetX)
+      ? Math.max(-50, Math.min(50, parsed.portraitOffsetX))
+      : 0,
+    portraitOffsetY: typeof parsed.portraitOffsetY === 'number' && Number.isFinite(parsed.portraitOffsetY)
+      ? Math.max(-50, Math.min(50, parsed.portraitOffsetY))
+      : 0,
     attacks: Array.isArray(parsed.attacks) ? parsed.attacks.map(normalizeAttack).filter(Boolean) as CharacterAttack[] : [],
     spells: Array.isArray(parsed.spells) ? parsed.spells.map(normalizeSpell).filter(Boolean) as CharacterSpell[] : [],
     inventory: text(parsed.inventory),

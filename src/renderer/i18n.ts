@@ -5,7 +5,7 @@ type Key =
   | 'settings' | 'appearance' | 'theme' | 'darkMode' | 'lightMode' | 'community' | 'githubRepo'
   | 'rollberryTitle' | 'rollberryInfo' | 'rollberryGithub'
   | 'new' | 'wizard' | 'searchCharacters' | 'delete' | 'duplicate' | 'exportCharacter'
-  | 'importDdb' | 'exportDdb' | 'setPortrait' | 'removePortrait' | 'portraitEditor' | 'zoom' | 'overview' | 'combat'
+  | 'importDdb' | 'exportDdb' | 'setPortrait' | 'removePortrait' | 'portraitEditor' | 'zoom' | 'offsetX' | 'offsetY' | 'overview' | 'combat'
   | 'skills' | 'story' | 'notes' | 'name' | 'ancestry' | 'class' | 'subclass' | 'level'
   | 'background' | 'proficiency' | 'initiative' | 'passivePerception' | 'passiveInsight'
   | 'spellDc' | 'spellAttack' | 'abilityScores' | 'vitals' | 'armorClass' | 'speed'
@@ -17,7 +17,7 @@ type Key =
   | 'addItem' | 'addNote' | 'itemName' | 'quantity' | 'weight' | 'value' | 'equipped' | 'itemNotes'
   | 'currency' | 'totalWeight' | 'totalValue' | 'title' | 'date' | 'tags' | 'body'
   | 'coinCopper' | 'coinSilver' | 'coinElectrum' | 'coinGold' | 'coinPlatinum'
-  | 'characterCreator' | 'abilityMethod' | 'standardArray' | 'pointBuy' | 'manual' | 'customOption' | 'applyTemplate'
+  | 'characterCreator' | 'abilityMethod' | 'standardArray' | 'pointBuy' | 'pointsRemaining' | 'manual' | 'customOption' | 'applyTemplate'
   | 'close' | 'libraryImported' | 'importInvalid' | 'importFailed' | 'portraitImported'
   | 'portraitFailed' | 'ddbImported' | 'ddbUnsupported' | 'actionMenu' | 'contextHint'
   | 'newItem' | 'sessionNote' | 'copySuffix' | 'deleteCharacterDetail' | 'newAttack'
@@ -56,6 +56,8 @@ const EN: Record<Key, string> = {
   removePortrait: 'Remove portrait',
   portraitEditor: 'Portrait mask',
   zoom: 'Zoom',
+  offsetX: 'Horizontal position',
+  offsetY: 'Vertical position',
   overview: 'Overview',
   combat: 'Combat',
   skills: 'Skills',
@@ -137,6 +139,7 @@ const EN: Record<Key, string> = {
   abilityMethod: 'Ability Method',
   standardArray: 'Standard Array',
   pointBuy: 'Point Buy',
+  pointsRemaining: 'Points remaining',
   manual: 'Manual',
   customOption: 'Custom',
   applyTemplate: 'Apply Template',
@@ -190,6 +193,8 @@ const DE: Record<Key, string> = {
   removePortrait: 'Portrait entfernen',
   portraitEditor: 'Portrait-Maske',
   zoom: 'Zoom',
+  offsetX: 'Horizontale Position',
+  offsetY: 'Vertikale Position',
   overview: 'Übersicht',
   combat: 'Kampf',
   skills: 'Fertigkeiten',
@@ -271,6 +276,7 @@ const DE: Record<Key, string> = {
   abilityMethod: 'Attributsmethode',
   standardArray: 'Standardwerte',
   pointBuy: 'Punktkauf',
+  pointsRemaining: 'Punkte übrig',
   manual: 'Manuell',
   customOption: 'Eigene',
   applyTemplate: 'Assistent anwenden',
@@ -392,6 +398,60 @@ const BACKGROUND_LABELS: Record<Locale, Record<string, string>> = {
   },
 }
 
+const FEATURE_LABELS: Record<Locale, Record<string, string>> = {
+  en: {},
+  de: {
+    'Ability Score Increase': 'Attributswerterhöhung',
+    'Arcane Recovery': 'Arkane Erholung',
+    'Bardic Inspiration': 'Bardische Inspiration',
+    Brave: 'Tapfer',
+    'Breath Weapon': 'Odemwaffe',
+    'By Popular Demand': 'Nachfrage beim Publikum',
+    'City Secrets': 'Geheimnisse der Stadt',
+    'Criminal Contact': 'Krimineller Kontakt',
+    Darkvision: 'Dunkelsicht',
+    Discovery: 'Entdeckung',
+    'Divine Domain': 'Göttliche Domäne',
+    'Divine Sense': 'Göttliches Gespür',
+    Draconic: 'Drakonisch',
+    'Draconic Ancestry': 'Drakonische Abstammung',
+    Druidic: 'Druidisch',
+    'Dwarven Resilience': 'Zwergische Widerstandskraft',
+    Expertise: 'Expertise',
+    'False Identity': 'Falsche Identität',
+    'Favored Enemy': 'Erzfeind',
+    'Fey Ancestry': 'Feenblut',
+    'Fighting Style': 'Kampfstil',
+    'Gnome Cunning': 'Gnomische Gerissenheit',
+    'Hellish Resistance': 'Höllische Resistenz',
+    'Keen Senses': 'Geschärfte Sinne',
+    Languages: 'Sprachen',
+    'Lay on Hands': 'Handauflegen',
+    Lucky: 'Glückspilz',
+    'Martial Arts': 'Kampfkünste',
+    'Military Rank': 'Militärischer Rang',
+    'Natural Explorer': 'Geborener Entdecker',
+    'Otherworldly Patron': 'Andersweltlicher Patron',
+    'Pact Magic': 'Paktmagie',
+    Rage: 'Kampfrausch',
+    Relentless: 'Unermüdlich',
+    'Relentless Endurance': 'Unverwüstliche Ausdauer',
+    Researcher: 'Forscher',
+    'Rustic Hospitality': 'Ländliche Gastfreundschaft',
+    'Second Wind': 'Durchatmen',
+    'Shelter of the Faithful': 'Zuflucht der Gläubigen',
+    'Ships Passage': 'Schiffspassage',
+    'Skill Versatility': 'Fertigkeitsvielseitigkeit',
+    'Sneak Attack': 'Hinterhältiger Angriff',
+    Sorcerous: 'Zauberischer Ursprung',
+    'Sorcerous Origin': 'Zauberischer Ursprung',
+    Spellcasting: 'Zauberwirken',
+    'Thieves Cant': 'Diebessprache',
+    'Unarmored Defense': 'Verteidigung ohne Rüstung',
+    Wanderer: 'Wanderer',
+  },
+}
+
 const ABILITY_LABELS: Record<Locale, Record<string, string>> = {
   en: { str: 'STR', dex: 'DEX', con: 'CON', int: 'INT', wis: 'WIS', cha: 'CHA' },
   de: { str: 'STÄ', dex: 'GES', con: 'KON', int: 'INT', wis: 'WEI', cha: 'CHA' },
@@ -415,4 +475,8 @@ export function speciesLabel(locale: Locale, value: string): string {
 
 export function backgroundLabel(locale: Locale, value: string): string {
   return BACKGROUND_LABELS[locale][value] ?? value
+}
+
+export function featureLabel(locale: Locale, value: string): string {
+  return FEATURE_LABELS[locale][value] ?? value
 }

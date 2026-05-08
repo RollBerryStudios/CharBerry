@@ -28,6 +28,9 @@ export interface CharacterSheet {
   hitDice: string
   inspiration: boolean
   portraitDataUrl: string
+  portraitZoom: number
+  portraitOffsetX: number
+  portraitOffsetY: number
   attacks: Array<{ id: string; name: string; bonus: string; damage: string; damageType: string; range: string; notes: string }>
   spells: Array<{ id: string; level: number; name: string; prepared: boolean; notes: string }>
   inventory: string
@@ -107,6 +110,9 @@ export function sampleLibrary(): CharacterLibrary {
     hitDice: '5d10',
     inspiration: false,
     portraitDataUrl: '',
+    portraitZoom: 1,
+    portraitOffsetX: 0,
+    portraitOffsetY: 0,
     attacks: [
       { id: 'atk-bow', name: 'Longbow', bonus: '+7', damage: '1d8+4', damageType: 'piercing', range: '150/600', notes: '' },
     ],
