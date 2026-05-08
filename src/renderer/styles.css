@@ -193,8 +193,12 @@ h1, h2, h3, p { margin-top: 0; }
 .inventory-summary { display: flex; flex-wrap: wrap; gap: 10px; color: var(--muted); font-size: 12px; }
 .inventory-summary strong { color: var(--cream); }
 .inventory-table, .session-list { display: grid; gap: 8px; }
-.inventory-row { display: grid; grid-template-columns: minmax(180px, 1fr) 82px 96px 110px 124px 34px; gap: 7px; align-items: end; border: 1px solid var(--line-soft); background: #111816; border-radius: 8px; padding: 7px; }
+.inventory-header,
+.inventory-row { display: grid; grid-template-columns: minmax(180px, 1fr) 82px 96px 110px 92px 34px; gap: 7px; align-items: center; }
+.inventory-header { color: var(--muted); font-size: 11px; font-weight: 800; padding: 0 7px; }
+.inventory-row { border: 1px solid var(--line-soft); background: #111816; border-radius: 8px; padding: 7px; }
 .inventory-row > * { min-width: 0; }
+.inventory-equipped { justify-content: center; min-height: var(--rb-control-h); }
 .session-note { display: grid; gap: 8px; border: 1px solid var(--line-soft); background: #111816; border-radius: 8px; padding: 8px; }
 .session-meta { display: grid; grid-template-columns: 138px minmax(160px, 1fr) minmax(120px, 1fr) 34px; gap: 8px; align-items: end; }
 .session-note textarea { min-height: 96px; }
@@ -261,6 +265,7 @@ h1, h2, h3, p { margin-top: 0; }
 .app-shell[data-theme="light"] .ability-box,
 .app-shell[data-theme="light"] .save-row,
 .app-shell[data-theme="light"] .skill-row,
+.app-shell[data-theme="light"] .inventory-header,
 .app-shell[data-theme="light"] .inventory-row,
 .app-shell[data-theme="light"] .session-note,
 .app-shell[data-theme="light"] .point-buy-panel,
@@ -320,8 +325,8 @@ h1, h2, h3, p { margin-top: 0; }
   .identity-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .derived-strip { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .overview-grid, .combat-grid, .skills-grid, .inventory-grid, .notes-grid, .story-grid { grid-template-columns: 1fr; }
-  .inventory-row { grid-template-columns: minmax(160px, 1fr) 70px 80px; }
-  .inventory-row .wide-field { grid-column: 1 / -1; }
+  .inventory-header,
+  .inventory-row { grid-template-columns: minmax(160px, 1fr) 70px 80px 90px 72px 34px; }
   .inventory-row .check-line, .inventory-row .icon-button { width: 100%; }
   .session-meta, .wizard-grid { grid-template-columns: 1fr; }
   .point-buy-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -370,6 +375,7 @@ h1, h2, h3, p { margin-top: 0; }
   .attack-row,
   .spell-row,
   .inventory-row,
+  .inventory-header,
   .session-meta,
   .wizard-grid {
     grid-template-columns: 1fr;

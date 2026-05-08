@@ -991,14 +991,21 @@ function InventoryCard({
         <span>{t(locale, 'totalValue')}: <strong>{totalValueText(character.inventoryItems)}</strong></span>
       </div>
       <div className="inventory-table">
+        <div className="inventory-header" aria-hidden="true">
+          <span>{t(locale, 'itemName')}</span>
+          <span>{t(locale, 'quantity')}</span>
+          <span>{t(locale, 'weight')}</span>
+          <span>{t(locale, 'value')}</span>
+          <span>{t(locale, 'equipped')}</span>
+          <span></span>
+        </div>
         {character.inventoryItems.map((item) => (
           <div className="inventory-row" key={item.id} onContextMenu={(event) => onContextMenu(event, item.id)}>
-            <label>{t(locale, 'itemName')}<input value={item.name} onChange={(event) => onUpdate(item.id, { name: event.target.value })} /></label>
-            <label>{t(locale, 'quantity')}<input type="number" min={1} value={item.quantity} onChange={(event) => onUpdate(item.id, { quantity: Math.max(1, numberValue(event.target.value, 1)) })} /></label>
-            <label>{t(locale, 'weight')}<input type="number" min={0} step={0.1} value={item.weight} onChange={(event) => onUpdate(item.id, { weight: Math.max(0, numberValue(event.target.value, 0)) })} /></label>
-            <label>{t(locale, 'value')}<input value={item.value} onChange={(event) => onUpdate(item.id, { value: event.target.value })} /></label>
-            <label className="check-line"><input type="checkbox" checked={item.equipped} onChange={(event) => onUpdate(item.id, { equipped: event.target.checked })} /> {t(locale, 'equipped')}</label>
-            <label className="wide-field">{t(locale, 'itemNotes')}<input value={item.notes} onChange={(event) => onUpdate(item.id, { notes: event.target.value })} /></label>
+            <input aria-label={t(locale, 'itemName')} value={item.name} onChange={(event) => onUpdate(item.id, { name: event.target.value })} />
+            <input aria-label={t(locale, 'quantity')} type="number" min={1} value={item.quantity} onChange={(event) => onUpdate(item.id, { quantity: Math.max(1, numberValue(event.target.value, 1)) })} />
+            <input aria-label={t(locale, 'weight')} type="number" min={0} step={0.1} value={item.weight} onChange={(event) => onUpdate(item.id, { weight: Math.max(0, numberValue(event.target.value, 0)) })} />
+            <input aria-label={t(locale, 'value')} value={item.value} onChange={(event) => onUpdate(item.id, { value: event.target.value })} />
+            <span className="check-line inventory-equipped"><input aria-label={`${t(locale, 'equipped')} ${item.name}`} type="checkbox" checked={item.equipped} onChange={(event) => onUpdate(item.id, { equipped: event.target.checked })} /></span>
             <button className="icon-button danger" aria-label={`${t(locale, 'remove')} ${item.name}`} onClick={() => onDelete(item.id)}>x</button>
           </div>
         ))}
