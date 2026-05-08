@@ -1,6 +1,6 @@
 {
   "name": "charberry",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "CharBerry - interactive local character sheets for virtual tabletop rounds",
   "main": "dist/main/main.js",
   "homepage": ".",
