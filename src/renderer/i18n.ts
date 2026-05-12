@@ -22,6 +22,9 @@ type Key =
   | 'portraitFailed' | 'ddbImported' | 'ddbUnsupported' | 'actionMenu' | 'contextHint'
   | 'newItem' | 'sessionNote' | 'copySuffix' | 'deleteCharacterDetail' | 'newAttack'
   | 'newSpell' | 'remove'
+  | 'playDashboard' | 'health' | 'damage' | 'heal' | 'fullHeal' | 'amount' | 'conditions' | 'addCondition'
+  | 'conditionPlaceholder' | 'resources' | 'addResource' | 'resourceName' | 'resetOn' | 'shortRest' | 'longRest'
+  | 'manualReset' | 'reset' | 'roll' | 'rollLog' | 'noRolls' | 'quickRolls' | 'deathSaves' | 'successes' | 'failures'
 
 export type TranslationKey = Key
 
@@ -160,6 +163,30 @@ const EN: Record<Key, string> = {
   newAttack: 'New Attack',
   newSpell: 'New Spell',
   remove: 'Remove',
+  playDashboard: 'Play Dashboard',
+  health: 'Health',
+  damage: 'Damage',
+  heal: 'Heal',
+  fullHeal: 'Full heal',
+  amount: 'Amount',
+  conditions: 'Conditions',
+  addCondition: 'Add condition',
+  conditionPlaceholder: 'Concentrating, prone, poisoned...',
+  resources: 'Resources',
+  addResource: 'Add resource',
+  resourceName: 'Resource',
+  resetOn: 'Reset',
+  shortRest: 'Short rest',
+  longRest: 'Long rest',
+  manualReset: 'Manual',
+  reset: 'Reset',
+  roll: 'Roll',
+  rollLog: 'Roll result',
+  noRolls: 'No rolls yet',
+  quickRolls: 'Quick rolls',
+  deathSaves: 'Death saves',
+  successes: 'Successes',
+  failures: 'Failures',
 }
 
 const DE: Record<Key, string> = {
@@ -297,6 +324,30 @@ const DE: Record<Key, string> = {
   newAttack: 'Neuer Angriff',
   newSpell: 'Neuer Zauber',
   remove: 'Entfernen',
+  playDashboard: 'Spiel-Dashboard',
+  health: 'Gesundheit',
+  damage: 'Schaden',
+  heal: 'Heilen',
+  fullHeal: 'Voll heilen',
+  amount: 'Wert',
+  conditions: 'Zustände',
+  addCondition: 'Zustand hinzufügen',
+  conditionPlaceholder: 'Konzentration, liegend, vergiftet...',
+  resources: 'Ressourcen',
+  addResource: 'Ressource hinzufügen',
+  resourceName: 'Ressource',
+  resetOn: 'Reset',
+  shortRest: 'Kurze Rast',
+  longRest: 'Lange Rast',
+  manualReset: 'Manuell',
+  reset: 'Auffüllen',
+  roll: 'Würfeln',
+  rollLog: 'Würfelergebnis',
+  noRolls: 'Noch keine Würfe',
+  quickRolls: 'Schnellwürfe',
+  deathSaves: 'Todesrettung',
+  successes: 'Erfolge',
+  failures: 'Fehlschläge',
 }
 
 export function t(locale: Locale, key: Key): string {

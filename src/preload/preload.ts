@@ -43,6 +43,14 @@ export interface CharacterSessionNote {
   tags: string[]
 }
 
+export interface CharacterResource {
+  id: string
+  name: string
+  current: number
+  max: number
+  reset: 'short' | 'long' | 'manual'
+}
+
 export interface CharacterSheet {
   id: string
   name: string
@@ -65,6 +73,8 @@ export interface CharacterSheet {
   spellcastingAbility: AbilityKey
   hitDice: string
   inspiration: boolean
+  conditions: string[]
+  resources: CharacterResource[]
   portraitDataUrl: string
   portraitZoom: number
   portraitOffsetX: number

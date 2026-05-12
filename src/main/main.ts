@@ -45,6 +45,14 @@ interface CharacterSessionNote {
   tags: string[]
 }
 
+interface CharacterResource {
+  id: string
+  name: string
+  current: number
+  max: number
+  reset: 'short' | 'long' | 'manual'
+}
+
 interface CharacterSheet {
   id: string
   name: string
@@ -67,6 +75,8 @@ interface CharacterSheet {
   spellcastingAbility: AbilityKey
   hitDice: string
   inspiration: boolean
+  conditions: string[]
+  resources: CharacterResource[]
   portraitDataUrl: string
   portraitZoom: number
   portraitOffsetX: number
@@ -263,6 +273,20 @@ function normalizeSessionNote(value: unknown): CharacterSessionNote | null {
   }
 }
 
+function normalizeResource(value: unknown): CharacterResource | null {
+  if (!value || typeof value !== 'object') return null
+  const parsed = value as Partial<CharacterResource>
+  const max = clampInt(parsed.max, 0, 99, 1)
+  const reset = parsed.reset === 'short' || parsed.reset === 'long' ? parsed.reset : 'manual'
+  return {
+    id: text(parsed.id, makeId()),
+    name: text(parsed.name, 'Resource').trim() || 'Resource',
+    current: clampInt(parsed.current, 0, max, max),
+    max,
+    reset,
+  }
+}
+
 function legacySessionNotes(value: unknown): CharacterSessionNote[] {
   const body = text(value).trim()
   if (!body) return []
@@ -293,6 +317,11 @@ function emptyCharacter(): CharacterSheet {
     spellcastingAbility: 'cha',
     hitDice: '1d10',
     inspiration: false,
+    conditions: [],
+    resources: [
+      { id: makeId(), name: 'Second Wind', current: 1, max: 1, reset: 'short' },
+      { id: makeId(), name: 'Hit Dice', current: 1, max: 1, reset: 'long' },
+    ],
     portraitDataUrl: '',
     portraitZoom: 1,
     portraitOffsetX: 0,
@@ -347,6 +376,8 @@ function normalizeCharacter(value: unknown): CharacterSheet | null {
     spellcastingAbility: activeAbility,
     hitDice: text(parsed.hitDice),
     inspiration: Boolean(parsed.inspiration),
+    conditions: tags(parsed.conditions).slice(0, 16),
+    resources: Array.isArray(parsed.resources) ? parsed.resources.map(normalizeResource).filter(Boolean) as CharacterResource[] : [],
     portraitDataUrl: text(parsed.portraitDataUrl),
     portraitZoom: typeof parsed.portraitZoom === 'number' && Number.isFinite(parsed.portraitZoom)
       ? Math.max(1, Math.min(2.5, parsed.portraitZoom))
@@ -389,6 +420,10 @@ function defaultLibrary(): CharacterLibrary {
   character.savingThrows = { str: true, dex: true, con: false, int: false, wis: false, cha: false }
   character.hpMax = 44
   character.hpCurrent = 38
+  character.resources = [
+    { id: makeId(), name: 'Hit Dice', current: 5, max: 5, reset: 'long' },
+    { id: makeId(), name: 'Favored Focus', current: 2, max: 2, reset: 'long' },
+  ]
   character.armorClass = 16
   character.initiativeBonus = 0
   character.spellcastingAbility = 'wis'

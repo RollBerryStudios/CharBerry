@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { MouseEvent } from 'react'
-import type { AbilityKey, CharacterAttack, CharacterInventoryItem, CharacterLibrary, CharacterSessionNote, CharacterSheet, CharacterSpell, Locale, SkillRank, Theme } from '../preload/preload'
+import type { AbilityKey, CharacterAttack, CharacterInventoryItem, CharacterLibrary, CharacterResource, CharacterSessionNote, CharacterSheet, CharacterSpell, Locale, SkillRank, Theme } from '../preload/preload'
 import logoUrl from '../../resources/logo.png'
 import { abilityLabel, backgroundLabel, classLabel, featureLabel, skillLabel, speciesLabel, t, type TranslationKey } from './i18n'
 import { applySkillPicks, backgroundByName, classByName, speciesByName, SRD_BACKGROUNDS, SRD_CLASSES, SRD_SPECIES, STANDARD_ARRAY } from './rules/srd'
@@ -68,6 +68,13 @@ interface ContextMenuState {
   id: string
 }
 
+interface RollResult {
+  label: string
+  expression: string
+  total: number
+  parts: number[]
+}
+
 function newId(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`
 }
@@ -105,6 +112,29 @@ function spellAttack(character: CharacterSheet): number {
   return proficiency(character.level) + modifier(character.abilityScores[character.spellcastingAbility])
 }
 
+function rollDie(sides: number): number {
+  return Math.floor(Math.random() * sides) + 1
+}
+
+function rollExpression(expression: string): RollResult | null {
+  const normalized = expression.replace(/\s+/g, '').toLowerCase()
+  const match = normalized.match(/^(\d*)d(\d+)([+-]\d+)?$/)
+  if (!match) {
+    const flat = Number(normalized)
+    return Number.isFinite(flat) ? { label: '', expression, total: flat, parts: [] } : null
+  }
+  const count = Math.max(1, Math.min(20, Number(match[1] || 1)))
+  const sides = Math.max(2, Math.min(100, Number(match[2])))
+  const bonus = Number(match[3] ?? 0)
+  const parts = Array.from({ length: count }, () => rollDie(sides))
+  return { label: '', expression, total: parts.reduce((sum, part) => sum + part, bonus), parts }
+}
+
+function parseBonus(value: string): number {
+  const match = value.match(/[+-]?\d+/)
+  return match ? Number(match[0]) : 0
+}
+
 function emptySkills(): Record<string, SkillRank> {
   return Object.fromEntries(SKILLS.map((skill) => [skill.key, 'none'])) as Record<string, SkillRank>
 }
@@ -132,6 +162,10 @@ function emptyCharacter(): CharacterSheet {
     spellcastingAbility: 'cha',
     hitDice: '1d8',
     inspiration: false,
+    conditions: [],
+    resources: [
+      { id: newId(), name: 'Hit Dice', current: 1, max: 1, reset: 'long' },
+    ],
     portraitDataUrl: '',
     portraitZoom: 1,
     portraitOffsetX: 0,
@@ -287,6 +321,9 @@ export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [portraitEditorOpen, setPortraitEditorOpen] = useState(false)
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null)
+  const [hpAmount, setHpAmount] = useState(5)
+  const [conditionDraft, setConditionDraft] = useState('')
+  const [rollResult, setRollResult] = useState<RollResult | null>(null)
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const libraryRef = useRef(library)
 
@@ -391,6 +428,7 @@ export default function App() {
       name: `${source.name} ${t(locale, 'copySuffix')}`,
       attacks: source.attacks.map((attack) => ({ ...attack, id: newId() })),
       spells: source.spells.map((spell) => ({ ...spell, id: newId() })),
+      resources: source.resources.map((resource) => ({ ...resource, id: newId() })),
       inventoryItems: source.inventoryItems.map((item) => ({ ...item, id: newId() })),
       sessionNotes: source.sessionNotes.map((note) => ({ ...note, id: newId() })),
       updatedAt: new Date().toISOString(),
@@ -464,6 +502,54 @@ export default function App() {
 
   function upsertSpell(id: string, patch: Partial<CharacterSpell>): void {
     updateActive({ spells: activeCharacter.spells.map((spell) => spell.id === id ? { ...spell, ...patch } : spell) })
+  }
+
+  function applyDamage(amount: number): void {
+    const damage = Math.max(0, amount)
+    const tempAbsorbed = Math.min(activeCharacter.hpTemp, damage)
+    const remaining = damage - tempAbsorbed
+    updateActive({
+      hpTemp: activeCharacter.hpTemp - tempAbsorbed,
+      hpCurrent: Math.max(0, activeCharacter.hpCurrent - remaining),
+    })
+  }
+
+  function applyHealing(amount: number): void {
+    updateActive({ hpCurrent: Math.min(activeCharacter.hpMax, activeCharacter.hpCurrent + Math.max(0, amount)) })
+  }
+
+  function updateResource(id: string, patch: Partial<CharacterResource>): void {
+    updateActive({
+      resources: activeCharacter.resources.map((resource) => {
+        if (resource.id !== id) return resource
+        const max = patch.max ?? resource.max
+        const current = patch.current ?? resource.current
+        return { ...resource, ...patch, max: Math.max(0, max), current: Math.max(0, Math.min(Math.max(0, max), current)) }
+      }),
+    })
+  }
+
+  function addResource(): void {
+    updateActive({ resources: [...activeCharacter.resources, { id: newId(), name: t(locale, 'resourceName'), current: 1, max: 1, reset: 'manual' }] })
+  }
+
+  function addCondition(): void {
+    const condition = conditionDraft.trim()
+    if (!condition || activeCharacter.conditions.includes(condition)) return
+    updateActive({ conditions: [...activeCharacter.conditions, condition].slice(0, 16) })
+    setConditionDraft('')
+  }
+
+  function resetResources(kind: CharacterResource['reset']): void {
+    updateActive({
+      resources: activeCharacter.resources.map((resource) => resource.reset === kind ? { ...resource, current: resource.max } : resource),
+    })
+  }
+
+  function roll(label: string, expression: string): void {
+    const result = rollExpression(expression)
+    if (!result) return
+    setRollResult({ ...result, label })
   }
 
   function updateInventoryItems(items: CharacterInventoryItem[]): void {
@@ -604,6 +690,84 @@ export default function App() {
             <button className="danger delete-character" disabled={library.characters.length <= 1} onClick={deleteCharacter}>{t(locale, 'delete')}</button>
           </div>
 
+          <section className="play-dashboard" aria-label={t(locale, 'playDashboard')}>
+            <div className="dashboard-card health-card">
+              <div className="section-line">
+                <h2>{t(locale, 'health')}</h2>
+                <strong>{activeCharacter.hpCurrent}/{activeCharacter.hpMax} +{activeCharacter.hpTemp}</strong>
+              </div>
+              <div className="hp-meter" aria-hidden="true">
+                <span style={{ width: `${Math.min(100, Math.max(0, activeCharacter.hpMax ? activeCharacter.hpCurrent / activeCharacter.hpMax * 100 : 0))}%` }} />
+              </div>
+              <div className="hp-actions">
+                <label>{t(locale, 'amount')}<input type="number" min={0} value={hpAmount} onChange={(event) => setHpAmount(numberValue(event.target.value, 0))} /></label>
+                <button onClick={() => applyDamage(hpAmount)}>{t(locale, 'damage')}</button>
+                <button onClick={() => applyHealing(hpAmount)}>{t(locale, 'heal')}</button>
+                <button onClick={() => updateActive({ hpCurrent: activeCharacter.hpMax, hpTemp: 0 })}>{t(locale, 'fullHeal')}</button>
+              </div>
+            </div>
+
+            <div className="dashboard-card">
+              <div className="section-line">
+                <h2>{t(locale, 'conditions')}</h2>
+                <button onClick={addCondition}>{t(locale, 'addCondition')}</button>
+              </div>
+              <div className="condition-entry">
+                <input value={conditionDraft} onChange={(event) => setConditionDraft(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') addCondition() }} placeholder={t(locale, 'conditionPlaceholder')} />
+              </div>
+              <div className="condition-list">
+                {activeCharacter.conditions.length ? activeCharacter.conditions.map((condition) => (
+                  <button key={condition} onClick={() => updateActive({ conditions: activeCharacter.conditions.filter((item) => item !== condition) })}>
+                    {condition} x
+                  </button>
+                )) : <span>{t(locale, 'none')}</span>}
+              </div>
+            </div>
+
+            <div className="dashboard-card resources-card">
+              <div className="section-line">
+                <h2>{t(locale, 'resources')}</h2>
+                <button onClick={addResource}>{t(locale, 'addResource')}</button>
+              </div>
+              <div className="resource-rests">
+                <button onClick={() => resetResources('short')}>{t(locale, 'shortRest')}</button>
+                <button onClick={() => resetResources('long')}>{t(locale, 'longRest')}</button>
+              </div>
+              <div className="resource-list">
+                {activeCharacter.resources.map((resource) => (
+                  <div className="resource-row" key={resource.id}>
+                    <input aria-label={t(locale, 'resourceName')} value={resource.name} onChange={(event) => updateResource(resource.id, { name: event.target.value })} />
+                    <button className="icon-button" onClick={() => updateResource(resource.id, { current: resource.current - 1 })}>-</button>
+                    <strong>{resource.current}/{resource.max}</strong>
+                    <button className="icon-button" onClick={() => updateResource(resource.id, { current: resource.current + 1 })}>+</button>
+                    <input aria-label={t(locale, 'maxHp')} type="number" min={0} value={resource.max} onChange={(event) => updateResource(resource.id, { max: numberValue(event.target.value, 0), current: Math.min(resource.current, numberValue(event.target.value, 0)) })} />
+                    <select aria-label={t(locale, 'resetOn')} value={resource.reset} onChange={(event) => updateResource(resource.id, { reset: event.target.value as CharacterResource['reset'] })}>
+                      <option value="short">{t(locale, 'shortRest')}</option>
+                      <option value="long">{t(locale, 'longRest')}</option>
+                      <option value="manual">{t(locale, 'manualReset')}</option>
+                    </select>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="dashboard-card roll-card">
+              <div className="section-line">
+                <h2>{t(locale, 'quickRolls')}</h2>
+                <button onClick={() => roll(t(locale, 'initiative'), `1d20${formatBonus(initiative)}`)}>{t(locale, 'initiative')}</button>
+              </div>
+              <div className="quick-roll-grid">
+                <button onClick={() => roll(t(locale, 'spellAttack'), `1d20${formatBonus(spellAttack(activeCharacter))}`)}>{t(locale, 'spellAttack')}</button>
+                <button onClick={() => roll(t(locale, 'passivePerception'), `1d20${formatBonus(skillBonus(activeCharacter, 'perception'))}`)}>Perception</button>
+                <button onClick={() => roll('DEX Save', `1d20${formatBonus(saveBonus(activeCharacter, 'dex'))}`)}>DEX Save</button>
+              </div>
+              <div className="roll-result">
+                <span>{t(locale, 'rollLog')}</span>
+                {rollResult ? <strong>{rollResult.label}: {rollResult.total} <em>{rollResult.expression}</em></strong> : <strong>{t(locale, 'noRolls')}</strong>}
+              </div>
+            </div>
+          </section>
+
           <div className="derived-strip">
             <Stat label={t(locale, 'proficiency')} value={formatBonus(proficiency(activeCharacter.level))} />
             <Stat label={t(locale, 'initiative')} value={formatBonus(initiative)} />
@@ -665,6 +829,8 @@ export default function App() {
                         <label>{t(locale, 'attackRange')}<input value={attack.range} onChange={(event) => upsertAttack(attack.id, { range: event.target.value })} /></label>
                         <label>{t(locale, 'attackType')}<input value={attack.damageType} onChange={(event) => upsertAttack(attack.id, { damageType: event.target.value })} /></label>
                         <label className="wide-field">{t(locale, 'attackNotes')}<input value={attack.notes} onChange={(event) => upsertAttack(attack.id, { notes: event.target.value })} /></label>
+                        <button aria-label={`${t(locale, 'roll')} ${attack.name}`} title={`${t(locale, 'roll')} ${attack.name}`} onClick={() => roll(attack.name, `1d20${formatBonus(parseBonus(attack.bonus))}`)}>20</button>
+                        {attack.damage && <button aria-label={`${t(locale, 'attackDamage')} ${attack.name}`} title={`${t(locale, 'attackDamage')} ${attack.name}`} onClick={() => roll(`${attack.name} ${t(locale, 'attackDamage')}`, attack.damage)}>{attack.damage}</button>}
                         <button className="icon-button danger" aria-label={`${t(locale, 'remove')} ${attack.name}`} onClick={() => updateActive({ attacks: activeCharacter.attacks.filter((item) => item.id !== attack.id) })}>x</button>
                       </div>
                     ))}
@@ -689,6 +855,8 @@ export default function App() {
                         <label>{t(locale, 'spellRange')}<input value={spell.range} onChange={(event) => upsertSpell(spell.id, { range: event.target.value })} /></label>
                         <label className="check-line"><input type="checkbox" checked={spell.prepared} onChange={(event) => upsertSpell(spell.id, { prepared: event.target.checked })} /> {t(locale, 'prepared')}</label>
                         <label className="wide-field">{t(locale, 'spellNotes')}<input value={spell.notes} onChange={(event) => upsertSpell(spell.id, { notes: event.target.value })} /></label>
+                        <button aria-label={`${t(locale, 'roll')} ${spell.name}`} title={`${t(locale, 'roll')} ${spell.name}`} onClick={() => roll(spell.name, `1d20${formatBonus(spellAttack(activeCharacter))}`)}>20</button>
+                        {spell.damage && <button aria-label={`${t(locale, 'spellDamage')} ${spell.name}`} title={`${t(locale, 'spellDamage')} ${spell.name}`} onClick={() => roll(`${spell.name} ${t(locale, 'spellDamage')}`, spell.damage)}>{spell.damage}</button>}
                         <button className="icon-button danger" aria-label={`${t(locale, 'remove')} ${spell.name}`} onClick={() => updateActive({ spells: activeCharacter.spells.filter((item) => item.id !== spell.id) })}>x</button>
                       </div>
                     ))}

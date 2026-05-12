@@ -11,7 +11,7 @@
 
 <p align="center">
   <img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-yellow.svg">
-  <img alt="Version" src="https://img.shields.io/badge/version-0.1.2-blue.svg">
+  <img alt="Version" src="https://img.shields.io/badge/version-0.1.7-blue.svg">
   <img alt="Electron" src="https://img.shields.io/badge/Electron-41-47848F?logo=electron&logoColor=white">
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white">
   <img alt="React" src="https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white">
@@ -32,6 +32,7 @@ VTT brauchen oder bereits mit analoger Karte, anderem VTT oder leichtem
 Online-Setup spielen.
 
 - **Standalone statt Kampagnen-Suite** - Charakterverwaltung ohne BoltBerry-Projekt
+- **Play Dashboard** - TP, Temp-TP, Zustände, Ressourcen und schnelle Würfe im Blick
 - **Interaktiver Charakterbogen** - Werte schnell bearbeiten, abgeleitete Werte automatisch sehen
 - **SRD-Starter** - geführter Start-Workflow mit frei nutzbaren SRD-Grundlagen
 - **Portraits, Inventar, Notizen** - strukturierte Daten statt Blank-Textfelder
@@ -43,18 +44,18 @@ Linux.
 
 ### Aktueller Release
 
-Aktuelle Version: **0.1.2**
+Aktuelle Version: **0.1.7**
 
 - [Neueste Release herunterladen](https://github.com/RollBerryStudios/CharBerry/releases/latest)
 - [Alle Releases anzeigen](https://github.com/RollBerryStudios/CharBerry/releases)
-- Direkter Tag: [v0.1.2](https://github.com/RollBerryStudios/CharBerry/releases/tag/v0.1.2)
+- Direkter Tag: [v0.1.7](https://github.com/RollBerryStudios/CharBerry/releases/tag/v0.1.7)
 
 | Plattform | Artefakt in der Release |
 |---|---|
-| Windows x64 | `CharBerry.Setup.0.1.2.exe` |
-| Linux x64 | `CharBerry-0.1.2.AppImage`, `charberry_0.1.2_amd64.deb` |
-| macOS x64 | `CharBerry-0.1.2.dmg`, `CharBerry-0.1.2-mac.zip` |
-| macOS Apple Silicon | `CharBerry-0.1.2-arm64.dmg`, `CharBerry-0.1.2-arm64-mac.zip` |
+| Windows x64 | `CharBerry.Setup.0.1.7.exe` |
+| Linux x64 | `CharBerry-0.1.7.AppImage`, `charberry_0.1.7_amd64.deb` |
+| macOS x64 | `CharBerry-0.1.7.dmg`, `CharBerry-0.1.7-mac.zip` |
+| macOS Apple Silicon | `CharBerry-0.1.7-arm64.dmg`, `CharBerry-0.1.7-arm64-mac.zip` |
 
 ### Features
 
@@ -62,11 +63,12 @@ Aktuelle Version: **0.1.2**
 |---|---|
 | **Charakterbibliothek** | Charaktere erstellen, suchen, auswählen, duplizieren, exportieren und löschen |
 | **SRD-Assistent** | Geführter Starter für SRD-basierte Charaktergrundlagen ohne proprietäre Inhalte |
+| **Play Dashboard** | TP, Temp-TP, Schaden, Heilung, Zustände, Ressourcen und schnelle Würfe |
 | **Portraits** | Lokale Charakterbilder importieren und entfernen |
 | **Attribute** | D20-typische Attributsmodifikatoren automatisch berechnen |
 | **Übungsbonus** | Level-basierte Berechnung des Proficiency Bonus |
 | **Rettungswürfe & Fertigkeiten** | Proficiency, Expertise, passive Wahrnehmung und passive Motivkunde |
-| **Kampf** | TP, RK, Bewegung, Trefferwürfel, Initiative, Angriffe, Zauber-SG und Zauberangriff |
+| **Kampf** | RK, Bewegung, Trefferwürfel, Initiative, Angriffe, Zauber-SG, Zauberangriff und Schadenswürfe |
 | **Inventar** | Strukturierte Gegenstände mit Menge, Gewicht, Wert, Ausrüstung, Notizen und Summen |
 | **Sitzungsnotizen** | Datierte Notizen mit Titel, Tags und Textkörper |
 | **Geschichte** | Persönlichkeit, Ideale, Bindungen, Makel, Vorgeschichte und Merkmale |
@@ -104,7 +106,7 @@ npm run test:e2e:update   # Screenshot-Baselines nach absichtlichen UI-Änderung
 
 Die E2E-Suite startet CharBerry mit isolierten Testdaten und prüft Rendering,
 Berechnungen, Erstellen/Bearbeiten, Persistenz, Normalisierung beschädigter
-Daten, deutsche UI, SRD-Assistent, Kontextmenüs, strukturiertes Inventar,
+Daten, deutsche UI, SRD-Assistent, Play Dashboard, Ressourcen, Würfelaktionen, Kontextmenüs, strukturiertes Inventar,
 Sitzungsnotizen sowie Desktop-/Responsive-Screenshots ohne Überlappungen.
 
 ### Lokale Daten
@@ -160,6 +162,7 @@ character sheets**. It is built for groups that do not need a full VTT, or that
 already play with an analog map, another VTT, or a lightweight online setup.
 
 - **Standalone instead of campaign suite** - manage characters without a BoltBerry project
+- **Play Dashboard** - HP, temp HP, conditions, resources, and quick rolls at a glance
 - **Interactive character sheet** - edit quickly and see derived values immediately
 - **SRD starter** - guided starter workflow based on open SRD fundamentals
 - **Portraits, inventory, notes** - structured data instead of blank text boxes
@@ -171,18 +174,18 @@ Linux.
 
 ### Current Release
 
-Current version: **0.1.2**
+Current version: **0.1.7**
 
 - [Download the latest release](https://github.com/RollBerryStudios/CharBerry/releases/latest)
 - [View all releases](https://github.com/RollBerryStudios/CharBerry/releases)
-- Direct tag: [v0.1.2](https://github.com/RollBerryStudios/CharBerry/releases/tag/v0.1.2)
+- Direct tag: [v0.1.7](https://github.com/RollBerryStudios/CharBerry/releases/tag/v0.1.7)
 
 | Platform | Release artifact |
 |---|---|
-| Windows x64 | `CharBerry.Setup.0.1.2.exe` |
-| Linux x64 | `CharBerry-0.1.2.AppImage`, `charberry_0.1.2_amd64.deb` |
-| macOS x64 | `CharBerry-0.1.2.dmg`, `CharBerry-0.1.2-mac.zip` |
-| macOS Apple Silicon | `CharBerry-0.1.2-arm64.dmg`, `CharBerry-0.1.2-arm64-mac.zip` |
+| Windows x64 | `CharBerry.Setup.0.1.7.exe` |
+| Linux x64 | `CharBerry-0.1.7.AppImage`, `charberry_0.1.7_amd64.deb` |
+| macOS x64 | `CharBerry-0.1.7.dmg`, `CharBerry-0.1.7-mac.zip` |
+| macOS Apple Silicon | `CharBerry-0.1.7-arm64.dmg`, `CharBerry-0.1.7-arm64-mac.zip` |
 
 ### Features
 
@@ -190,11 +193,12 @@ Current version: **0.1.2**
 |---|---|
 | **Character Library** | Create, search, select, duplicate, export, and delete characters |
 | **SRD Creator** | Guided starter for SRD-based character foundations without proprietary content |
+| **Play Dashboard** | HP, temp HP, damage, healing, conditions, resources, and quick rolls |
 | **Portraits** | Import and remove local character portraits |
 | **Ability Scores** | Automatic D20-style ability modifiers |
 | **Proficiency** | Level-based proficiency bonus calculation |
 | **Saves & Skills** | Proficiency, expertise, passive perception, and passive insight |
-| **Combat** | HP, AC, speed, hit dice, initiative, attacks, spell DC, and spell attack |
+| **Combat** | AC, speed, hit dice, initiative, attacks, spell DC, spell attack, and damage rolls |
 | **Inventory** | Structured items with quantity, weight, value, equipped state, notes, and totals |
 | **Session Notes** | Dated notes with title, tags, and body text |
 | **Story** | Personality, ideals, bonds, flaws, backstory, and features |
