@@ -212,7 +212,7 @@ function normalizeAttack(value: unknown): CharacterAttack | null {
   const parsed = value as Partial<CharacterAttack>
   return {
     id: text(parsed.id, makeId()),
-    name: text(parsed.name, 'Attack'),
+    name: text(parsed.name, 'Angriff'),
     bonus: text(parsed.bonus),
     damage: text(parsed.damage),
     damageType: text(parsed.damageType),
@@ -227,7 +227,7 @@ function normalizeSpell(value: unknown): CharacterSpell | null {
   return {
     id: text(parsed.id, makeId()),
     level: clampInt(parsed.level, 0, 9, 0),
-    name: text(parsed.name, 'Spell'),
+    name: text(parsed.name, 'Zauber'),
     damage: text(parsed.damage),
     range: text(parsed.range),
     prepared: Boolean(parsed.prepared),
@@ -267,7 +267,7 @@ function normalizeSessionNote(value: unknown): CharacterSessionNote | null {
   return {
     id: text(parsed.id, makeId()),
     date: text(parsed.date, new Date().toISOString().slice(0, 10)),
-    title: text(parsed.title, 'Session Note').trim() || 'Session Note',
+    title: text(parsed.title, 'Sitzungsnotiz').trim() || 'Sitzungsnotiz',
     body: text(parsed.body),
     tags: tags(parsed.tags),
   }
@@ -280,7 +280,7 @@ function normalizeResource(value: unknown): CharacterResource | null {
   const reset = parsed.reset === 'short' || parsed.reset === 'long' ? parsed.reset : 'manual'
   return {
     id: text(parsed.id, makeId()),
-    name: text(parsed.name, 'Resource').trim() || 'Resource',
+    name: text(parsed.name, 'Ressource').trim() || 'Ressource',
     current: clampInt(parsed.current, 0, max, max),
     max,
     reset,
@@ -290,16 +290,16 @@ function normalizeResource(value: unknown): CharacterResource | null {
 function legacySessionNotes(value: unknown): CharacterSessionNote[] {
   const body = text(value).trim()
   if (!body) return []
-  return [{ id: makeId(), date: new Date().toISOString().slice(0, 10), title: 'Imported notes', body, tags: ['legacy'] }]
+  return [{ id: makeId(), date: new Date().toISOString().slice(0, 10), title: 'Importierte Notizen', body, tags: ['legacy'] }]
 }
 
 function emptyCharacter(): CharacterSheet {
   const now = new Date().toISOString()
   return {
     id: makeId(),
-    name: 'New Hero',
-    ancestry: 'Human',
-    className: 'Fighter',
+    name: 'Neuer Held',
+    ancestry: 'Mensch',
+    className: 'Kämpfer',
     subclass: '',
     level: 1,
     background: '',
@@ -319,23 +319,23 @@ function emptyCharacter(): CharacterSheet {
     inspiration: false,
     conditions: [],
     resources: [
-      { id: makeId(), name: 'Second Wind', current: 1, max: 1, reset: 'short' },
-      { id: makeId(), name: 'Hit Dice', current: 1, max: 1, reset: 'long' },
+      { id: makeId(), name: 'Durchatmen', current: 1, max: 1, reset: 'short' },
+      { id: makeId(), name: 'Trefferwürfel', current: 1, max: 1, reset: 'long' },
     ],
     portraitDataUrl: '',
     portraitZoom: 1,
     portraitOffsetX: 0,
     portraitOffsetY: 0,
-    attacks: [{ id: makeId(), name: 'Longsword', bonus: '+4', damage: '1d8+2', damageType: 'slashing', range: '5 ft', notes: '' }],
+    attacks: [{ id: makeId(), name: 'Langschwert', bonus: '+4', damage: '1W8+2', damageType: 'Hiebschaden', range: '1,5 m', notes: '' }],
     spells: [],
-    inventory: 'Explorer pack, shield, longsword',
+    inventory: 'Entdeckerpaket, Schild, Langschwert',
     inventoryItems: [
-      { id: makeId(), name: 'Explorer pack', quantity: 1, weight: 59, value: '10 gp', equipped: false, notes: '' },
-      { id: makeId(), name: 'Shield', quantity: 1, weight: 6, value: '10 gp', equipped: true, notes: '+2 AC when equipped' },
-      { id: makeId(), name: 'Longsword', quantity: 1, weight: 3, value: '15 gp', equipped: true, notes: '' },
+      { id: makeId(), name: 'Entdeckerpaket', quantity: 1, weight: 59, value: '10 GM', equipped: false, notes: '' },
+      { id: makeId(), name: 'Schild', quantity: 1, weight: 6, value: '10 GM', equipped: true, notes: '+2 RK ausgerüstet' },
+      { id: makeId(), name: 'Langschwert', quantity: 1, weight: 3, value: '15 GM', equipped: true, notes: '' },
     ],
     currency: { cp: 0, sp: 0, ep: 0, gp: 15, pp: 0 },
-    features: 'Fighting Style, Second Wind',
+    features: 'Kampfstil, Durchatmen',
     personality: '',
     ideals: '',
     bonds: '',
@@ -410,35 +410,89 @@ function normalizeCharacter(value: unknown): CharacterSheet | null {
 }
 
 function defaultLibrary(): CharacterLibrary {
-  const character = emptyCharacter()
-  character.name = 'Aster Rowan'
-  character.ancestry = 'Half-Elf'
-  character.className = 'Ranger'
-  character.level = 5
-  character.abilityScores = { str: 10, dex: 18, con: 14, int: 12, wis: 16, cha: 11 }
-  character.skills = skills({ acrobatics: 'proficient', stealth: 'expertise', survival: 'proficient', perception: 'proficient', investigation: 'proficient' })
-  character.savingThrows = { str: true, dex: true, con: false, int: false, wis: false, cha: false }
-  character.hpMax = 44
-  character.hpCurrent = 38
-  character.resources = [
-    { id: makeId(), name: 'Hit Dice', current: 5, max: 5, reset: 'long' },
-    { id: makeId(), name: 'Favored Focus', current: 2, max: 2, reset: 'long' },
+  const kara = emptyCharacter()
+  kara.name = 'Kara Steinfaust'
+  kara.ancestry = 'Goliath'
+  kara.className = 'Barbar'
+  kara.background = 'Soldat'
+  kara.alignment = 'Chaotisch Neutral'
+  kara.level = 5
+  kara.xp = 6500
+  kara.abilityScores = { str: 18, dex: 13, con: 16, int: 8, wis: 12, cha: 10 }
+  kara.skills = skills({ athletics: 'proficient', intimidation: 'proficient', perception: 'proficient', survival: 'proficient' })
+  kara.savingThrows = { str: true, dex: false, con: true, int: false, wis: false, cha: false }
+  kara.hpMax = 50
+  kara.hpCurrent = 44
+  kara.armorClass = 13
+  kara.hitDice = '5W12'
+  kara.resources = [
+    { id: makeId(), name: 'Wut', current: 3, max: 3, reset: 'long' },
+    { id: makeId(), name: 'Trefferwürfel', current: 5, max: 5, reset: 'long' },
   ]
-  character.armorClass = 16
-  character.initiativeBonus = 0
-  character.spellcastingAbility = 'wis'
-  character.hitDice = '5d10'
-  character.attacks = [
-    { id: makeId(), name: 'Longbow', bonus: '+7', damage: '1d8+4', damageType: 'piercing', range: '150/600', notes: 'Ambush opener.' },
-    { id: makeId(), name: 'Shortsword', bonus: '+7', damage: '1d6+4', damageType: 'piercing', range: '5 ft', notes: '' },
+  kara.attacks = [
+    { id: makeId(), name: 'Großaxt', bonus: '+7', damage: '1W12+4', damageType: 'Hiebschaden', range: '1,5 m', notes: 'Wut: +2 Schaden' },
+    { id: makeId(), name: 'Handaxt', bonus: '+7', damage: '1W6+4', damageType: 'Hiebschaden', range: 'Wurfwaffe', notes: '' },
   ]
-  character.spells = [
-    { id: makeId(), level: 1, name: 'Hunter mark', damage: '1d6', range: '90 ft', prepared: true, notes: 'Bonus action concentration.' },
-    { id: makeId(), level: 2, name: 'Pass without trace', damage: '', range: 'Self', prepared: true, notes: '+10 stealth aura.' },
+  kara.inventory = 'Großaxt, 2x Handäxte, Entdeckerpaket, Reisekleidung, Rangabzeichen, Würfelset'
+  kara.inventoryItems = [
+    { id: makeId(), name: 'Großaxt', quantity: 1, weight: 7, value: '30 GM', equipped: true, notes: '' },
+    { id: makeId(), name: 'Handaxt', quantity: 2, weight: 2, value: '5 GM', equipped: true, notes: 'Wurfwaffe' },
+    { id: makeId(), name: 'Entdeckerpaket', quantity: 1, weight: 59, value: '10 GM', equipped: false, notes: '' },
   ]
-  character.features = 'Favored Enemy, Natural Explorer, Extra Attack'
-  character.notes = 'Tracks enemy movement and carries party navigation details.'
-  return { version: 1, activeCharacterId: character.id, characters: [character], settings: { locale: 'de', theme: 'dark' } }
+  kara.currency = { cp: 0, sp: 0, ep: 0, gp: 9, pp: 0 }
+  kara.features = 'Wut, Ungerüstete Verteidigung, Waffenmeisterschaft, Wilder Angreifer'
+  kara.personality = 'Kurz angebunden, laut, ehrlich; sucht immer den direkten Weg.'
+  kara.ideals = 'Ehre. Ich lasse niemanden zurück, der unter meinem Banner stand.'
+  kara.bonds = 'Meine alte Einheit hat mir das Leben gerettet.'
+  kara.flaws = 'Ich überschätze oft meine Unverwundbarkeit und stürme zu weit vor.'
+  kara.backstory = 'Veteranin vieler Grenzgefechte, die Konflikte lieber direkt löst.'
+  kara.sessionNotes = [{ id: makeId(), date: '2026-05-12', title: 'Frontlinie', body: 'Kara hält Engstellen und zieht Aufmerksamkeit auf sich.', tags: ['kampf'] }]
+
+  const lysandra = emptyCharacter()
+  lysandra.name = 'Lysandra Federkiel'
+  lysandra.ancestry = 'Elf'
+  lysandra.className = 'Barde'
+  lysandra.subclass = 'Kollegium der Lehre'
+  lysandra.background = 'Gelehrter'
+  lysandra.alignment = 'Neutral Gut'
+  lysandra.level = 5
+  lysandra.xp = 6500
+  lysandra.abilityScores = { str: 8, dex: 14, con: 13, int: 13, wis: 10, cha: 18 }
+  lysandra.skills = skills({ arcana: 'proficient', history: 'proficient', insight: 'proficient', performance: 'expertise', persuasion: 'expertise' })
+  lysandra.savingThrows = { str: false, dex: true, con: false, int: false, wis: false, cha: true }
+  lysandra.hpMax = 33
+  lysandra.hpCurrent = 29
+  lysandra.armorClass = 13
+  lysandra.spellcastingAbility = 'cha'
+  lysandra.hitDice = '5W8'
+  lysandra.resources = [
+    { id: makeId(), name: 'Bardische Inspiration', current: 4, max: 4, reset: 'short' },
+    { id: makeId(), name: 'Trefferwürfel', current: 5, max: 5, reset: 'long' },
+  ]
+  lysandra.attacks = [
+    { id: makeId(), name: 'Rapier', bonus: '+5', damage: '1W8+2', damageType: 'Stichschaden', range: '1,5 m', notes: '' },
+    { id: makeId(), name: 'Leichte Armbrust', bonus: '+5', damage: '1W8+2', damageType: 'Stichschaden', range: '24/96 m', notes: '' },
+  ]
+  lysandra.spells = [
+    { id: makeId(), level: 0, name: 'Spott', damage: '', range: '18 m', prepared: true, notes: 'Weisheitswurf gegen Zauber-SG' },
+    { id: makeId(), level: 1, name: 'Heilendes Wort', damage: '1W4+4', range: '18 m', prepared: true, notes: 'Bonusaktion' },
+  ]
+  lysandra.inventory = 'Lederrüstung, Rapier, Leichte Armbrust, Laute, Gelehrtenpaket, Tinte & Federkiel'
+  lysandra.inventoryItems = [
+    { id: makeId(), name: 'Rapier', quantity: 1, weight: 2, value: '25 GM', equipped: true, notes: '' },
+    { id: makeId(), name: 'Laute', quantity: 1, weight: 2, value: '35 GM', equipped: false, notes: 'Fokus und Bühnenwerkzeug' },
+    { id: makeId(), name: 'Buch des Wissens', quantity: 1, weight: 3, value: '', equipped: false, notes: 'Mentorenhinweise' },
+  ]
+  lysandra.currency = { cp: 0, sp: 0, ep: 0, gp: 10, pp: 0 }
+  lysandra.features = 'Zauberwirken, Bardische Inspiration, Expertise, Lied der Erholung'
+  lysandra.personality = 'Neugierig, charmant, sammelt Geheimnisse wie andere Münzen.'
+  lysandra.ideals = 'Wissen. Wahrheit ist Macht - und Macht gehört in gute Hände.'
+  lysandra.bonds = 'Mein Mentor verschwand bei der Suche nach einem verlorenen Codex.'
+  lysandra.flaws = 'Ich kann nicht widerstehen, eine zu gute Geschichte auszuschmücken.'
+  lysandra.backstory = 'Elfische Wortkünstlerin, die Wissen in Klingen verwandelt.'
+  lysandra.sessionNotes = [{ id: makeId(), date: '2026-05-12', title: 'Verlorener Codex', body: 'Lysandra prüft jede Spur zu ihrem Mentor.', tags: ['story'] }]
+
+  return { version: 1, activeCharacterId: kara.id, characters: [kara, lysandra], settings: { locale: 'de', theme: 'dark' } }
 }
 
 function normalizeLibrary(value: unknown): CharacterLibrary {

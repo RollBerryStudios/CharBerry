@@ -142,7 +142,7 @@ function emptySkills(): Record<string, SkillRank> {
 function emptyCharacter(): CharacterSheet {
   return {
     id: newId(),
-    name: 'New Hero',
+    name: 'Neuer Held',
     ancestry: '',
     className: '',
     subclass: '',
@@ -164,7 +164,7 @@ function emptyCharacter(): CharacterSheet {
     inspiration: false,
     conditions: [],
     resources: [
-      { id: newId(), name: 'Hit Dice', current: 1, max: 1, reset: 'long' },
+      { id: newId(), name: 'Trefferwürfel', current: 1, max: 1, reset: 'long' },
     ],
     portraitDataUrl: '',
     portraitZoom: 1,
@@ -758,8 +758,8 @@ export default function App() {
               </div>
               <div className="quick-roll-grid">
                 <button onClick={() => roll(t(locale, 'spellAttack'), `1d20${formatBonus(spellAttack(activeCharacter))}`)}>{t(locale, 'spellAttack')}</button>
-                <button onClick={() => roll(t(locale, 'passivePerception'), `1d20${formatBonus(skillBonus(activeCharacter, 'perception'))}`)}>Perception</button>
-                <button onClick={() => roll('DEX Save', `1d20${formatBonus(saveBonus(activeCharacter, 'dex'))}`)}>DEX Save</button>
+                <button onClick={() => roll(t(locale, 'perceptionCheck'), `1d20${formatBonus(skillBonus(activeCharacter, 'perception'))}`)}>{t(locale, 'perceptionCheck')}</button>
+                <button onClick={() => roll(t(locale, 'dexSave'), `1d20${formatBonus(saveBonus(activeCharacter, 'dex'))}`)}>{t(locale, 'dexSave')}</button>
               </div>
               <div className="roll-result">
                 <span>{t(locale, 'rollLog')}</span>

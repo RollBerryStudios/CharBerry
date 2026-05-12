@@ -32,7 +32,7 @@ VTT brauchen oder bereits mit analoger Karte, anderem VTT oder leichtem
 Online-Setup spielen.
 
 - **Standalone statt Kampagnen-Suite** - Charakterverwaltung ohne BoltBerry-Projekt
-- **Play Dashboard** - TP, Temp-TP, Zustände, Ressourcen und schnelle Würfe im Blick
+- **Spielübersicht** - TP, Temp-TP, Zustände, Ressourcen und schnelle Würfe im Blick
 - **Interaktiver Charakterbogen** - Werte schnell bearbeiten, abgeleitete Werte automatisch sehen
 - **SRD-Starter** - geführter Start-Workflow mit frei nutzbaren SRD-Grundlagen
 - **Portraits, Inventar, Notizen** - strukturierte Daten statt Blank-Textfelder
@@ -63,7 +63,7 @@ Aktuelle Version: **0.1.7**
 |---|---|
 | **Charakterbibliothek** | Charaktere erstellen, suchen, auswählen, duplizieren, exportieren und löschen |
 | **SRD-Assistent** | Geführter Starter für SRD-basierte Charaktergrundlagen ohne proprietäre Inhalte |
-| **Play Dashboard** | TP, Temp-TP, Schaden, Heilung, Zustände, Ressourcen und schnelle Würfe |
+| **Spielübersicht** | TP, Temp-TP, Schaden, Heilung, Zustände, Ressourcen und schnelle Würfe |
 | **Portraits** | Lokale Charakterbilder importieren und entfernen |
 | **Attribute** | D20-typische Attributsmodifikatoren automatisch berechnen |
 | **Übungsbonus** | Level-basierte Berechnung des Proficiency Bonus |
@@ -106,7 +106,7 @@ npm run test:e2e:update   # Screenshot-Baselines nach absichtlichen UI-Änderung
 
 Die E2E-Suite startet CharBerry mit isolierten Testdaten und prüft Rendering,
 Berechnungen, Erstellen/Bearbeiten, Persistenz, Normalisierung beschädigter
-Daten, deutsche UI, SRD-Assistent, Play Dashboard, Ressourcen, Würfelaktionen, Kontextmenüs, strukturiertes Inventar,
+Daten, deutsche UI, SRD-Assistent, Spielübersicht, Ressourcen, Würfelaktionen, Kontextmenüs, strukturiertes Inventar,
 Sitzungsnotizen sowie Desktop-/Responsive-Screenshots ohne Überlappungen.
 
 ### Lokale Daten

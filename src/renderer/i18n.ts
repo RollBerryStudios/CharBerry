@@ -25,6 +25,7 @@ type Key =
   | 'playDashboard' | 'health' | 'damage' | 'heal' | 'fullHeal' | 'amount' | 'conditions' | 'addCondition'
   | 'conditionPlaceholder' | 'resources' | 'addResource' | 'resourceName' | 'resetOn' | 'shortRest' | 'longRest'
   | 'manualReset' | 'reset' | 'roll' | 'rollLog' | 'noRolls' | 'quickRolls' | 'deathSaves' | 'successes' | 'failures'
+  | 'perceptionCheck' | 'dexSave'
 
 export type TranslationKey = Key
 
@@ -187,6 +188,8 @@ const EN: Record<Key, string> = {
   deathSaves: 'Death saves',
   successes: 'Successes',
   failures: 'Failures',
+  perceptionCheck: 'Perception',
+  dexSave: 'DEX Save',
 }
 
 const DE: Record<Key, string> = {
@@ -324,7 +327,7 @@ const DE: Record<Key, string> = {
   newAttack: 'Neuer Angriff',
   newSpell: 'Neuer Zauber',
   remove: 'Entfernen',
-  playDashboard: 'Spiel-Dashboard',
+  playDashboard: 'Spielübersicht',
   health: 'Gesundheit',
   damage: 'Schaden',
   heal: 'Heilen',
@@ -348,6 +351,8 @@ const DE: Record<Key, string> = {
   deathSaves: 'Todesrettung',
   successes: 'Erfolge',
   failures: 'Fehlschläge',
+  perceptionCheck: 'Wahrnehmung',
+  dexSave: 'GES-Rettung',
 }
 
 export function t(locale: Locale, key: Key): string {
@@ -387,7 +392,6 @@ const SKILL_LABELS: Record<Locale, Record<string, string>> = {
     investigation: 'Nachforschungen',
     medicine: 'Heilkunde',
     nature: 'Naturkunde',
-    perception: 'Wahrnehmung',
     performance: 'Auftreten',
     persuasion: 'Überzeugen',
     religion: 'Religion',
