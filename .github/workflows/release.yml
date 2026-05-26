@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     branches:
-      - 'release-trigger/**'
+      - 'release-trigger/*'
     tags:
       - 'v*.*.*'
   workflow_dispatch:
