@@ -2,8 +2,8 @@ export type Locale = 'en' | 'de'
 
 type Key =
   | 'tagline' | 'export' | 'import' | 'dataFolder' | 'dataActions' | 'language' | 'characters' | 'savedSheets'
-  | 'settings' | 'appearance' | 'theme' | 'darkMode' | 'lightMode' | 'community' | 'githubRepo'
-  | 'rollberryTitle' | 'rollberryInfo' | 'rollberryGithub'
+  | 'settings' | 'appearance' | 'theme' | 'darkMode' | 'lightMode' | 'community'
+  | 'rollberryTitle' | 'rollberryInfo' | 'rollberryWebsite'
   | 'new' | 'wizard' | 'searchCharacters' | 'delete' | 'duplicate' | 'exportCharacter'
   | 'importDdb' | 'exportDdb' | 'setPortrait' | 'removePortrait' | 'portraitEditor' | 'zoom' | 'offsetX' | 'offsetY' | 'overview' | 'combat'
   | 'skills' | 'story' | 'notes' | 'name' | 'ancestry' | 'class' | 'subclass' | 'level'
@@ -42,10 +42,9 @@ const EN: Record<Key, string> = {
   darkMode: 'Dark',
   lightMode: 'Light',
   community: 'Community',
-  githubRepo: 'GitHub repository',
   rollberryTitle: 'RollBerry Studios',
   rollberryInfo: 'Local-first tabletop tools for game masters and players.',
-  rollberryGithub: 'RollBerry Studios on GitHub',
+  rollberryWebsite: 'rollberry.de',
   characters: 'Characters',
   savedSheets: 'saved sheets',
   new: 'New',
@@ -205,10 +204,9 @@ const DE: Record<Key, string> = {
   darkMode: 'Dunkel',
   lightMode: 'Hell',
   community: 'Community',
-  githubRepo: 'GitHub-Repository',
   rollberryTitle: 'RollBerry Studios',
   rollberryInfo: 'Lokale Tabletop-Tools für Spielleitungen und Spieler.',
-  rollberryGithub: 'RollBerry Studios auf GitHub',
+  rollberryWebsite: 'rollberry.de',
   characters: 'Charaktere',
   savedSheets: 'gespeicherte Bögen',
   new: 'Neu',

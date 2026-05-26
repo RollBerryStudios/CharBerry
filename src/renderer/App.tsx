@@ -46,8 +46,7 @@ const TABS: Array<{ id: TabId; label: TranslationKey }> = [
   { id: 'notes', label: 'notes' },
 ]
 
-const GITHUB_URL = 'https://github.com/RollBerryStudios/CharBerry'
-const ROLLBERRY_URL = 'https://github.com/RollBerryStudios'
+const ROLLBERRY_URL = 'https://rollberry.de'
 const CONTACT_EMAIL = 'kontakt@rollberry.de'
 const CONTACT_URL = `mailto:${CONTACT_EMAIL}`
 const RENDERER_PLATFORM = getRendererPlatform()
@@ -1041,8 +1040,7 @@ export default function App() {
                 <h3>{t(locale, 'community')}</h3>
                 <p>{t(locale, 'rollberryInfo')}</p>
                 <button onClick={() => window.charberry.openExternal(CONTACT_URL)}>{CONTACT_EMAIL}</button>
-                <button onClick={() => window.charberry.openExternal(GITHUB_URL)}>{t(locale, 'githubRepo')}</button>
-                <button onClick={() => window.charberry.openExternal(ROLLBERRY_URL)}>{t(locale, 'rollberryGithub')}</button>
+                <button onClick={() => window.charberry.openExternal(ROLLBERRY_URL)}>{t(locale, 'rollberryWebsite')}</button>
               </section>
             </div>
           </section>
