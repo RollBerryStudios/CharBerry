@@ -10,6 +10,9 @@ on:
         description: 'Version tag (e.g. v0.1.0)'
         required: true
         type: string
+  repository_dispatch:
+    types:
+      - release
 
 permissions:
   contents: write
@@ -107,6 +110,8 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "tag=${{ github.event.inputs.tag }}" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            echo "tag=${{ github.event.client_payload.tag }}" >> "$GITHUB_OUTPUT"
           else
             echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
           fi
