@@ -2,7 +2,7 @@ export type Locale = 'en' | 'de'
 
 type Key =
   | 'tagline' | 'export' | 'import' | 'dataFolder' | 'dataActions' | 'language' | 'characters' | 'savedSheets'
-  | 'settings' | 'appearance' | 'theme' | 'darkMode' | 'lightMode' | 'community'
+  | 'settings' | 'helpTitle' | 'appearance' | 'theme' | 'darkMode' | 'lightMode' | 'community'
   | 'rollberryTitle' | 'rollberryInfo' | 'rollberryWebsite'
   | 'new' | 'wizard' | 'searchCharacters' | 'delete' | 'duplicate' | 'exportCharacter'
   | 'importDdb' | 'exportDdb' | 'setPortrait' | 'removePortrait' | 'portraitEditor' | 'zoom' | 'offsetX' | 'offsetY' | 'overview' | 'combat'
@@ -37,6 +37,7 @@ const EN: Record<Key, string> = {
   dataActions: 'Data',
   language: 'Language',
   settings: 'Settings',
+  helpTitle: 'Help and shortcuts',
   appearance: 'Appearance',
   theme: 'Theme',
   darkMode: 'Dark',
@@ -199,6 +200,7 @@ const DE: Record<Key, string> = {
   dataActions: 'Daten',
   language: 'Sprache',
   settings: 'Einstellungen',
+  helpTitle: 'Hilfe und Tastaturkürzel',
   appearance: 'Darstellung',
   theme: 'Design',
   darkMode: 'Dunkel',

@@ -423,8 +423,10 @@ h1, h2, h3, p { margin-top: 0; }
 }
 .app-shell[data-theme="light"] .toast { background: #ffffff; color: var(--text); }
 
-.settings-modal {
+.settings-modal,
+.help-modal {
   width: min(720px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
   border: 1px solid var(--line);
   border-radius: var(--rb-radius-lg);
   background: var(--surface);
@@ -432,9 +434,18 @@ h1, h2, h3, p { margin-top: 0; }
   box-shadow: var(--rb-shadow-modal);
   overflow: hidden;
 }
-.settings-modal header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 16px; border-bottom: 1px solid var(--line-soft); }
-.settings-modal h2, .settings-modal h3, .settings-modal p { margin: 0; }
-.settings-modal header p { margin-top: 4px; color: var(--muted); font-size: 12px; }
+.help-modal { display: flex; flex-direction: column; }
+.help-modal header, .settings-modal header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 16px; border-bottom: 1px solid var(--line-soft); }
+.help-modal h2, .help-modal h3, .help-modal p, .settings-modal h2, .settings-modal h3, .settings-modal p { margin: 0; }
+.help-modal header p, .settings-modal header p { margin-top: 4px; color: var(--muted); font-size: 12px; }
+.help-modal-body { flex: 1 1 auto; min-height: 0; display: grid; gap: 14px; overflow: auto; padding: 16px; }
+.help-section { display: grid; gap: 10px; border: 1px solid var(--line-soft); border-radius: 8px; background: color-mix(in srgb, var(--surface-2) 70%, transparent); padding: 14px; }
+.help-section h3 { font-size: 14px; }
+.help-section p, .help-list { color: var(--muted); font-size: 12px; line-height: 1.5; }
+.help-list { display: grid; gap: 6px; margin: 0; padding-left: 18px; }
+.shortcut-list { display: grid; gap: 7px; }
+.shortcut-row { display: grid; grid-template-columns: minmax(118px, 0.34fr) minmax(0, 1fr); gap: 12px; align-items: center; color: var(--muted); font-size: 12px; }
+.shortcut-row kbd { justify-self: start; max-width: 100%; border: 1px solid var(--line); border-radius: 6px; background: var(--surface-3); color: var(--text); padding: 3px 7px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px; white-space: normal; overflow-wrap: anywhere; }
 .settings-grid { display: grid; grid-template-columns: 230px minmax(0, 1fr); min-height: 250px; }
 .settings-grid section { display: grid; align-content: start; gap: 12px; padding: 16px; }
 .settings-grid section:first-child { border-right: 1px solid var(--line-soft); background: color-mix(in srgb, var(--surface-2) 64%, transparent); }
@@ -468,6 +479,7 @@ h1, h2, h3, p { margin-top: 0; }
   .point-buy-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .skill-table { grid-template-columns: 1fr; }
   .settings-grid { grid-template-columns: 1fr; }
+  .shortcut-row { grid-template-columns: 1fr; gap: 4px; }
   .settings-grid section:first-child { border-right: 0; border-bottom: 1px solid var(--line-soft); }
 }
 

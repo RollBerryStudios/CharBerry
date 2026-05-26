@@ -319,6 +319,7 @@ export default function App() {
   const [toast, setToast] = useState<string | null>(null)
   const [creatorOpen, setCreatorOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [helpOpen, setHelpOpen] = useState(false)
   const [portraitEditorOpen, setPortraitEditorOpen] = useState(false)
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null)
   const [hpAmount, setHpAmount] = useState(5)
@@ -336,6 +337,23 @@ export default function App() {
       setLibrary(loaded)
       setReady(true)
     })
+  }, [])
+
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setHelpOpen(false)
+        return
+      }
+      const target = event.target as HTMLElement | null
+      if (target && (target.isContentEditable || ['INPUT', 'SELECT', 'TEXTAREA'].includes(target.tagName))) return
+      if (event.key === '?' || event.key === 'F1') {
+        event.preventDefault()
+        setHelpOpen((value) => !value)
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
   }, [])
 
   useEffect(() => {
@@ -628,6 +646,7 @@ export default function App() {
 
       <div className="topbar">
         <div className="titlebar-actions">
+          <button className="icon-button" aria-label={t(locale, 'helpTitle')} title={t(locale, 'helpTitle')} onClick={() => setHelpOpen(true)}>?</button>
           <button className="icon-button settings-trigger" aria-label={t(locale, 'settings')} title={t(locale, 'settings')} onClick={() => setSettingsOpen(true)}>⚙</button>
           <button onClick={() => setCreatorOpen(true)}>{t(locale, 'wizard')}</button>
           <details className="action-menu">
@@ -1046,6 +1065,7 @@ export default function App() {
           </section>
         </div>
       )}
+      {helpOpen && <HelpModal locale={locale} onClose={() => setHelpOpen(false)} />}
       {contextMenu && (
         <ContextMenu
           locale={locale}
@@ -1081,6 +1101,89 @@ function getRendererPlatform(): 'darwin' | 'win32' | 'linux' {
   if (platform.includes('mac')) return 'darwin'
   if (platform.includes('win')) return 'win32'
   return 'linux'
+}
+
+function HelpModal({ locale, onClose }: { locale: Locale; onClose: () => void }) {
+  const content = charberryHelpContent(locale)
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <section className="help-modal" role="dialog" aria-modal="true" aria-label={content.title} onClick={(event) => event.stopPropagation()}>
+        <header>
+          <div>
+            <h2>{content.title}</h2>
+            <p>{content.subtitle}</p>
+          </div>
+          <button className="icon-button" aria-label={content.close} onClick={onClose}>x</button>
+        </header>
+        <div className="help-modal-body">
+          {content.sections.map((section) => (
+            <section className="help-section" key={section.title}>
+              <h3>{section.title}</h3>
+              {section.text && <p>{section.text}</p>}
+              {section.items && <ul className="help-list">{section.items.map((item) => <li key={item}>{item}</li>)}</ul>}
+              {section.shortcuts && (
+                <div className="shortcut-list">
+                  {section.shortcuts.map((shortcut) => (
+                    <div className="shortcut-row" key={`${shortcut.keys}-${shortcut.label}`}>
+                      <kbd>{shortcut.keys}</kbd>
+                      <span>{shortcut.label}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+          ))}
+        </div>
+      </section>
+    </div>
+  )
+}
+
+type HelpContent = {
+  title: string
+  subtitle: string
+  close: string
+  sections: Array<{
+    title: string
+    text?: string
+    items?: string[]
+    shortcuts?: Array<{ keys: string; label: string }>
+  }>
+}
+
+function charberryHelpContent(locale: Locale): HelpContent {
+  if (locale === 'en') {
+    return {
+      title: 'Help and shortcuts',
+      subtitle: 'A simple guide for creating, editing and using character sheets at the table.',
+      close: 'Close',
+      sections: [
+        { title: 'Character list', items: ['Use New or the wizard to create a character.', 'Search the saved sheets list when you have many characters.', 'Use the action menu or right-click entries to duplicate, export or delete data.'] },
+        { title: 'Sheet areas', items: ['Overview contains identity, core stats, HP and quick play information.', 'Combat tracks attacks, resources, conditions and spellcasting details.', 'Inventory, story and notes keep table information close to the sheet.'] },
+        { title: 'Working with values', items: ['Edit scores directly; derived values update from level, proficiency and ability modifiers.', 'Use the HP controls for damage and healing during play.', 'Portrait controls live in the portrait editor when a portrait is set.'] },
+        { title: 'Shortcuts', text: 'CharBerry currently has only one small field shortcut; the overview is still reachable from the keyboard.', shortcuts: [
+          { keys: '? / F1', label: 'Open this overview' },
+          { keys: 'Enter', label: 'Add a condition while the condition input is focused' },
+          { keys: 'Escape', label: 'Close this overview' }
+        ] }
+      ]
+    }
+  }
+  return {
+    title: 'Hilfe und Tastaturkürzel',
+    subtitle: 'Eine einfache Anleitung zum Erstellen, Bearbeiten und Nutzen von Charakterbögen am Tisch.',
+    close: 'Schließen',
+    sections: [
+      { title: 'Charakterliste', items: ['Mit Neu oder dem Wizard legst du einen Charakter an.', 'Nutze die Suche in den gespeicherten Bögen, wenn viele Charaktere vorhanden sind.', 'Über Aktionsmenü oder Rechtsklick kannst du Daten duplizieren, exportieren oder löschen.'] },
+      { title: 'Bogenbereiche', items: ['Übersicht enthält Identität, Kernwerte, Trefferpunkte und schnelle Spielinformationen.', 'Kampf bündelt Angriffe, Ressourcen, Zustände und Zauberdetails.', 'Inventar, Hintergrund und Notizen halten Tischinformationen direkt am Bogen.'] },
+      { title: 'Werte bearbeiten', items: ['Werte können direkt editiert werden; abgeleitete Werte folgen aus Level, Übungsbonus und Modifikatoren.', 'Die Trefferpunkt-Steuerung nutzt du für Schaden und Heilung während des Spiels.', 'Portrait-Feinabstimmung findest du im Portrait-Editor, sobald ein Portrait gesetzt ist.'] },
+      { title: 'Tastaturkürzel', text: 'CharBerry hat aktuell nur ein kleines Feld-Kürzel; diese Übersicht bleibt trotzdem per Tastatur erreichbar.', shortcuts: [
+        { keys: '? / F1', label: 'Diese Übersicht öffnen' },
+        { keys: 'Enter', label: 'Zustand hinzufügen, wenn das Zustandsfeld fokussiert ist' },
+        { keys: 'Escape', label: 'Diese Übersicht schließen' }
+      ] }
+    ]
+  }
 }
 
 function Stat({ label, value }: { label: string; value: string }) {
