@@ -2,6 +2,8 @@ name: Release
 
 on:
   push:
+    branches:
+      - 'release-trigger/**'
     tags:
       - 'v*.*.*'
   workflow_dispatch:
@@ -112,6 +114,9 @@ jobs:
             echo "tag=${{ github.event.inputs.tag }}" >> "$GITHUB_OUTPUT"
           elif [ "${{ github.event_name }}" = "repository_dispatch" ]; then
             echo "tag=${{ github.event.client_payload.tag }}" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.ref_type }}" = "branch" ]; then
+            version=$(node -p "require('./package.json').version")
+            echo "tag=v${version}" >> "$GITHUB_OUTPUT"
           else
             echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
           fi
