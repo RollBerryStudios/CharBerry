@@ -11,7 +11,7 @@
 
 <p align="center">
   <img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-yellow.svg">
-  <img alt="Version" src="https://img.shields.io/badge/version-0.1.9-blue.svg">
+  <img alt="Version" src="https://img.shields.io/badge/version-0.1.10-blue.svg">
   <img alt="Electron" src="https://img.shields.io/badge/Electron-41-47848F?logo=electron&logoColor=white">
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white">
   <img alt="React" src="https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white">
@@ -45,18 +45,18 @@ Linux.
 
 ### Aktueller Release
 
-Aktuelle Version: **0.1.9**
+Aktuelle Version: **0.1.10**
 
 - [Neueste Release herunterladen](https://github.com/RollBerryStudios/CharBerry/releases/latest)
 - [Alle Releases anzeigen](https://github.com/RollBerryStudios/CharBerry/releases)
-- Direkter Tag: [v0.1.9](https://github.com/RollBerryStudios/CharBerry/releases/tag/v0.1.9)
+- Direkter Tag: [v0.1.10](https://github.com/RollBerryStudios/CharBerry/releases/tag/v0.1.10)
 
 | Plattform | Artefakt in der Release |
 |---|---|
-| Windows x64 | `CharBerry.Setup.0.1.9.exe` |
-| Linux x64 | `CharBerry-0.1.9.AppImage`, `charberry_0.1.9_amd64.deb` |
-| macOS x64 | `CharBerry-0.1.9.dmg`, `CharBerry-0.1.9-mac.zip` |
-| macOS Apple Silicon | `CharBerry-0.1.9-arm64.dmg`, `CharBerry-0.1.9-arm64-mac.zip` |
+| Windows x64 | `CharBerry.Setup.0.1.10.exe` |
+| Linux x64 | `CharBerry-0.1.10.AppImage`, `charberry_0.1.10_amd64.deb` |
+| macOS x64 | `CharBerry-0.1.10.dmg`, `CharBerry-0.1.10-mac.zip` |
+| macOS Apple Silicon | `CharBerry-0.1.10-arm64.dmg`, `CharBerry-0.1.10-arm64-mac.zip` |
 
 ### Features
 
@@ -177,18 +177,18 @@ Linux.
 
 ### Current Release
 
-Current version: **0.1.9**
+Current version: **0.1.10**
 
 - [Download the latest release](https://github.com/RollBerryStudios/CharBerry/releases/latest)
 - [View all releases](https://github.com/RollBerryStudios/CharBerry/releases)
-- Direct tag: [v0.1.9](https://github.com/RollBerryStudios/CharBerry/releases/tag/v0.1.9)
+- Direct tag: [v0.1.10](https://github.com/RollBerryStudios/CharBerry/releases/tag/v0.1.10)
 
 | Platform | Release artifact |
 |---|---|
-| Windows x64 | `CharBerry.Setup.0.1.9.exe` |
-| Linux x64 | `CharBerry-0.1.9.AppImage`, `charberry_0.1.9_amd64.deb` |
-| macOS x64 | `CharBerry-0.1.9.dmg`, `CharBerry-0.1.9-mac.zip` |
-| macOS Apple Silicon | `CharBerry-0.1.9-arm64.dmg`, `CharBerry-0.1.9-arm64-mac.zip` |
+| Windows x64 | `CharBerry.Setup.0.1.10.exe` |
+| Linux x64 | `CharBerry-0.1.10.AppImage`, `charberry_0.1.10_amd64.deb` |
+| macOS x64 | `CharBerry-0.1.10.dmg`, `CharBerry-0.1.10-mac.zip` |
+| macOS Apple Silicon | `CharBerry-0.1.10-arm64.dmg`, `CharBerry-0.1.10-arm64-mac.zip` |
 
 ### Features
 
