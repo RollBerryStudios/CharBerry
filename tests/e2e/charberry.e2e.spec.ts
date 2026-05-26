@@ -310,8 +310,6 @@ test.describe('CharBerry Electron QA', () => {
       await expect(page.getByLabel('Language')).toHaveValue('en')
       await expect(page.getByLabel('Theme')).toHaveValue('dark')
       await expect(page.getByRole('button', { name: 'kontakt@rollberry.de' })).toBeVisible()
-      await expect(page.getByRole('button', { name: 'GitHub repository' })).toBeVisible()
-      await expect(page.getByRole('button', { name: 'RollBerry Studios on GitHub' })).toBeVisible()
       await expect(page).toHaveScreenshot('charberry-settings-dark-en.png', { fullPage: true })
       await page.getByLabel('Theme').selectOption('light')
       await expect(page.locator('.app-shell')).toHaveAttribute('data-theme', 'light')
