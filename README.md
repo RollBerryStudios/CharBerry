@@ -11,7 +11,7 @@
 
 <p align="center">
   <img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-yellow.svg">
-  <img alt="Version" src="https://img.shields.io/badge/version-0.1.7-blue.svg">
+  <img alt="Version" src="https://img.shields.io/badge/version-0.1.9-blue.svg">
   <img alt="Electron" src="https://img.shields.io/badge/Electron-41-47848F?logo=electron&logoColor=white">
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white">
   <img alt="React" src="https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white">
@@ -38,24 +38,25 @@ Online-Setup spielen.
 - **Portraits, Inventar, Notizen** - strukturierte Daten statt Blank-Textfelder
 - **Datenkontrolle** - lokale JSON-Datei, Import/Export, Bridge-Export und Datenordner-Zugriff
 - **Mehrsprachig** - Benutzeroberfläche auf Deutsch und Englisch
+- **Einheitliche Navigation** - kompakte BoltBerry-App-Chrome mit Wordmark, Charakter-Breadcrumb und separater Aktionsleiste
 
 Gebaut mit Electron, React, TypeScript und Vite. Läuft auf macOS, Windows und
 Linux.
 
 ### Aktueller Release
 
-Aktuelle Version: **0.1.7**
+Aktuelle Version: **0.1.9**
 
 - [Neueste Release herunterladen](https://github.com/RollBerryStudios/CharBerry/releases/latest)
 - [Alle Releases anzeigen](https://github.com/RollBerryStudios/CharBerry/releases)
-- Direkter Tag: [v0.1.7](https://github.com/RollBerryStudios/CharBerry/releases/tag/v0.1.7)
+- Direkter Tag: [v0.1.9](https://github.com/RollBerryStudios/CharBerry/releases/tag/v0.1.9)
 
 | Plattform | Artefakt in der Release |
 |---|---|
-| Windows x64 | `CharBerry.Setup.0.1.7.exe` |
-| Linux x64 | `CharBerry-0.1.7.AppImage`, `charberry_0.1.7_amd64.deb` |
-| macOS x64 | `CharBerry-0.1.7.dmg`, `CharBerry-0.1.7-mac.zip` |
-| macOS Apple Silicon | `CharBerry-0.1.7-arm64.dmg`, `CharBerry-0.1.7-arm64-mac.zip` |
+| Windows x64 | `CharBerry.Setup.0.1.9.exe` |
+| Linux x64 | `CharBerry-0.1.9.AppImage`, `charberry_0.1.9_amd64.deb` |
+| macOS x64 | `CharBerry-0.1.9.dmg`, `CharBerry-0.1.9-mac.zip` |
+| macOS Apple Silicon | `CharBerry-0.1.9-arm64.dmg`, `CharBerry-0.1.9-arm64-mac.zip` |
 
 ### Features
 
@@ -76,6 +77,7 @@ Aktuelle Version: **0.1.7**
 | **Datenmenü** | Kompakte Import-/Export-Aktionen, Bridge-JSON, DDB-ähnlicher JSON-Import und Datenordner |
 | **Autosave** | Lokale JSON-Persistenz mit Normalisierung beschädigter oder älterer Daten |
 | **Responsive UI** | Desktop- und schmale Layouts per Playwright-Screenshots abgesichert |
+| **App-Chrome** | Kompakte BoltBerry-inspirierte Titelleiste mit einheitlicher Navigation und DPI-sicherem Fensterkontroll-Abstand |
 
 ### Schnellstart
 
@@ -168,24 +170,25 @@ already play with an analog map, another VTT, or a lightweight online setup.
 - **Portraits, inventory, notes** - structured data instead of blank text boxes
 - **Data control** - local JSON data, import/export, bridge export, and data folder access
 - **Multilingual** - English and German interface
+- **Unified navigation** - compact BoltBerry-style app chrome with wordmark, character breadcrumb, and separate action bar
 
 Built with Electron, React, TypeScript, and Vite. Runs on macOS, Windows, and
 Linux.
 
 ### Current Release
 
-Current version: **0.1.7**
+Current version: **0.1.9**
 
 - [Download the latest release](https://github.com/RollBerryStudios/CharBerry/releases/latest)
 - [View all releases](https://github.com/RollBerryStudios/CharBerry/releases)
-- Direct tag: [v0.1.7](https://github.com/RollBerryStudios/CharBerry/releases/tag/v0.1.7)
+- Direct tag: [v0.1.9](https://github.com/RollBerryStudios/CharBerry/releases/tag/v0.1.9)
 
 | Platform | Release artifact |
 |---|---|
-| Windows x64 | `CharBerry.Setup.0.1.7.exe` |
-| Linux x64 | `CharBerry-0.1.7.AppImage`, `charberry_0.1.7_amd64.deb` |
-| macOS x64 | `CharBerry-0.1.7.dmg`, `CharBerry-0.1.7-mac.zip` |
-| macOS Apple Silicon | `CharBerry-0.1.7-arm64.dmg`, `CharBerry-0.1.7-arm64-mac.zip` |
+| Windows x64 | `CharBerry.Setup.0.1.9.exe` |
+| Linux x64 | `CharBerry-0.1.9.AppImage`, `charberry_0.1.9_amd64.deb` |
+| macOS x64 | `CharBerry-0.1.9.dmg`, `CharBerry-0.1.9-mac.zip` |
+| macOS Apple Silicon | `CharBerry-0.1.9-arm64.dmg`, `CharBerry-0.1.9-arm64-mac.zip` |
 
 ### Features
 
@@ -206,6 +209,7 @@ Current version: **0.1.7**
 | **Data Menu** | Compact import/export actions, bridge JSON, DDB-like JSON import, and data folder |
 | **Autosave** | Local JSON persistence with normalization of damaged or older data |
 | **Responsive UI** | Desktop and narrow layouts covered by Playwright screenshots |
+| **App Chrome** | Compact BoltBerry-inspired title bar with unified navigation and DPI-safe native-control spacing |
 
 ### Getting Started
 
