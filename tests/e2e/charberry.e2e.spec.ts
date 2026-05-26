@@ -9,7 +9,7 @@ test.describe('CharBerry Electron QA', () => {
       await expect(page.locator('.brand img')).toBeVisible()
       await expect(page.getByRole('button', { name: 'Settings' })).toBeVisible()
       await expect(page.getByRole('heading', { name: 'Characters' })).toBeVisible()
-      await expect(page.getByText('Aster Rowan')).toBeVisible()
+      await expect(page.getByRole('textbox', { name: 'Name' })).toHaveValue('Aster Rowan')
       await expect(page.getByText('Level 5 Half-Elf Ranger')).toBeVisible()
       await expect(page.getByText('Passive Perception')).toBeVisible()
       await expect(page.getByText('Spell DC')).toBeVisible()
