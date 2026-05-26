@@ -9,6 +9,7 @@ on:
       tag:
         description: 'Version tag (e.g. v0.1.0)'
         required: true
+        type: string
 
 permissions:
   contents: write
