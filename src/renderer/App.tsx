@@ -50,6 +50,7 @@ const GITHUB_URL = 'https://github.com/RollBerryStudios/CharBerry'
 const ROLLBERRY_URL = 'https://github.com/RollBerryStudios'
 const CONTACT_EMAIL = 'kontakt@rollberry.de'
 const CONTACT_URL = `mailto:${CONTACT_EMAIL}`
+const RENDERER_PLATFORM = getRendererPlatform()
 
 interface CreatorDraft {
   name: string
@@ -610,15 +611,23 @@ export default function App() {
   const initiative = modifier(activeCharacter.abilityScores.dex) + activeCharacter.initiativeBonus
 
   return (
-    <div className="app-shell" data-theme={theme}>
+    <div className="app-shell" data-theme={theme} data-platform={RENDERER_PLATFORM}>
       <header className="titlebar">
+        {RENDERER_PLATFORM === 'darwin' && <div className="titlebar-traffic-space" aria-hidden="true" />}
         <div className="brand">
           <img src={logoUrl} alt="" />
-          <div>
-            <strong>CharBerry</strong>
-            <span>{t(locale, 'tagline')}</span>
-          </div>
+          <span className="wordmark">CHAR<span>BERRY</span></span>
         </div>
+        <div className="titlebar-breadcrumb" title={`${activeCharacter.name} / ${classLabel(locale, activeCharacter.className)}`}>
+          <span>{t(locale, 'characters')}</span>
+          <span className="titlebar-breadcrumb-sep">/</span>
+          <strong>{activeCharacter.name}</strong>
+        </div>
+        <div className="spacer" />
+        {RENDERER_PLATFORM !== 'darwin' && <div className="titlebar-controls-space" aria-hidden="true" />}
+      </header>
+
+      <div className="topbar">
         <div className="titlebar-actions">
           <button className="icon-button settings-trigger" aria-label={t(locale, 'settings')} title={t(locale, 'settings')} onClick={() => setSettingsOpen(true)}>⚙</button>
           <button onClick={() => setCreatorOpen(true)}>{t(locale, 'wizard')}</button>
@@ -633,7 +642,7 @@ export default function App() {
             </div>
           </details>
         </div>
-      </header>
+      </div>
 
       <main className="char-layout">
         <aside className="roster-panel">
@@ -1067,6 +1076,13 @@ export default function App() {
       {toast && <div className="toast">{toast}</div>}
     </div>
   )
+}
+
+function getRendererPlatform(): 'darwin' | 'win32' | 'linux' {
+  const platform = navigator.platform.toLowerCase()
+  if (platform.includes('mac')) return 'darwin'
+  if (platform.includes('win')) return 'win32'
+  return 'linux'
 }
 
 function Stat({ label, value }: { label: string; value: string }) {

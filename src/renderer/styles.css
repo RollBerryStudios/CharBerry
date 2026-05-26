@@ -1,6 +1,8 @@
 @import './styles/rollberry-tokens.css';
 
 :root {
+  --titlebar-controls-w: 224px;
+  --titlebar-traffic-w: 72px;
   color-scheme: dark;
   font-family: var(--rb-font-sans);
   background: var(--rb-bg);
@@ -67,20 +69,62 @@ h1, h2, h3, p { margin-top: 0; }
 .titlebar {
   flex: 0 0 auto;
   min-height: var(--rb-titlebar-h);
+  height: var(--rb-titlebar-h);
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--rb-space-4);
-  padding: 8px 14px;
+  justify-content: flex-start;
+  gap: var(--rb-space-3);
+  padding: 0 12px;
+  overflow: hidden;
   border-bottom: 1px solid var(--line);
   background: var(--surface);
   -webkit-app-region: drag;
 }
-.brand { display: flex; align-items: center; min-width: 280px; gap: 12px; }
-.brand img { width: 38px; height: 38px; object-fit: contain; filter: drop-shadow(0 8px 18px rgba(0, 0, 0, .28)); }
-.brand strong { display: block; font-size: 18px; }
-.brand span { display: block; margin-top: 2px; color: var(--muted); font-size: 12px; }
-.titlebar-actions { -webkit-app-region: no-drag; display: flex; justify-content: flex-end; align-items: end; gap: 8px; flex-wrap: wrap; padding-right: var(--titlebar-controls-w, 150px); }
+.app-shell[data-platform='darwin'] .titlebar {
+  padding-left: 12px;
+  padding-right: 12px;
+}
+.topbar {
+  flex: 0 0 auto;
+  min-height: var(--rb-toolbar-h);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+}
+.brand { display: flex; align-items: center; min-width: 0; flex: 0 0 auto; gap: 6px; }
+.brand img { width: 18px; height: 18px; object-fit: contain; filter: drop-shadow(0 0 6px color-mix(in srgb, var(--berry) 32%, transparent)); }
+.wordmark { color: var(--text); font-size: 11px; font-weight: 800; letter-spacing: 0.14em; line-height: 1; }
+.wordmark span { color: var(--gold); }
+.titlebar-actions { -webkit-app-region: no-drag; display: flex; justify-content: flex-start; align-items: center; gap: 8px; flex-wrap: wrap; }
+.titlebar-traffic-space,
+.titlebar-controls-space {
+  height: 100%;
+  flex: 0 0 auto;
+}
+.titlebar-traffic-space { width: var(--titlebar-traffic-w); }
+.titlebar-controls-space { width: var(--titlebar-controls-w); }
+.titlebar-breadcrumb {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  max-width: 360px;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.titlebar-breadcrumb span,
+.titlebar-breadcrumb strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.titlebar-breadcrumb strong { color: var(--text); font-size: 12px; }
+.titlebar-breadcrumb-sep { color: var(--rb-text-3); flex: 0 0 auto; }
+.spacer { flex: 1; min-width: 0; }
 .language-select { width: 118px; }
 .language-select select { padding-block: 7px; }
 .action-menu { position: relative; }
@@ -430,7 +474,7 @@ h1, h2, h3, p { margin-top: 0; }
 @media (max-width: 980px) {
   html, body, #root { overflow: auto; }
   .app-shell { min-height: 100%; height: auto; }
-  .titlebar { align-items: flex-start; flex-direction: column; }
+  .titlebar { align-items: center; flex-direction: row; }
   .titlebar-actions { justify-content: flex-start; }
   .char-layout { grid-template-columns: 1fr; overflow: visible; }
   .roster-panel { max-height: 250px; }
@@ -449,6 +493,7 @@ h1, h2, h3, p { margin-top: 0; }
 
 @media (max-width: 520px) {
   .titlebar { gap: 12px; }
+  .titlebar-breadcrumb { display: none; }
   .titlebar-actions { width: 100%; gap: 7px; }
   .titlebar-actions button:not(.icon-button),
   .titlebar-actions .action-menu { flex: 1 1 calc(50% - 4px); min-width: 0; }

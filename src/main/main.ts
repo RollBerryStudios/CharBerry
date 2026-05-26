@@ -108,6 +108,7 @@ const isDev = process.env.NODE_ENV === 'development'
 const RENDERER_URL = 'http://localhost:5175'
 const APP_NAME = 'CharBerry'
 const DATA_FILE = 'charberry-library.json'
+const isDarwin = process.platform === 'darwin'
 
 app.setName(APP_NAME)
 if (process.env.CHARBERRY_E2E_USER_DATA) {
@@ -668,6 +669,9 @@ function createWindow(): void {
     minHeight: 720,
     title: APP_NAME,
     backgroundColor: '#101820',
+    frame: false,
+    titleBarStyle: isDarwin ? 'hiddenInset' : 'hidden',
+    ...(isDarwin ? { trafficLightPosition: { x: 16, y: 10 } } : { titleBarOverlay: { color: '#14161b', symbolColor: '#d7b45f', height: 36 } }),
     webPreferences: {
       preload: join(appRoot(), 'dist/preload/preload.js'),
       contextIsolation: true,
