@@ -11,7 +11,7 @@
 
 <p align="center">
   <img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-yellow.svg">
-  <img alt="Version" src="https://img.shields.io/badge/version-0.1.10-blue.svg">
+  <img alt="Version" src="https://img.shields.io/badge/version-0.1.12-blue.svg">
   <img alt="Electron" src="https://img.shields.io/badge/Electron-41-47848F?logo=electron&logoColor=white">
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white">
   <img alt="React" src="https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white">
@@ -45,18 +45,18 @@ Linux.
 
 ### Aktueller Release
 
-Aktuelle Version: **0.1.10**
+Aktuelle Version: **0.1.12**
 
 - [Neueste Release herunterladen](https://github.com/RollBerryStudios/CharBerry/releases/latest)
 - [Alle Releases anzeigen](https://github.com/RollBerryStudios/CharBerry/releases)
-- Direkter Tag: [v0.1.10](https://github.com/RollBerryStudios/CharBerry/releases/tag/v0.1.10)
+- Direkter Tag: [v0.1.12](https://github.com/RollBerryStudios/CharBerry/releases/tag/v0.1.12)
 
 | Plattform | Artefakt in der Release |
 |---|---|
-| Windows x64 | `CharBerry.Setup.0.1.10.exe` |
-| Linux x64 | `CharBerry-0.1.10.AppImage`, `charberry_0.1.10_amd64.deb` |
-| macOS x64 | `CharBerry-0.1.10.dmg`, `CharBerry-0.1.10-mac.zip` |
-| macOS Apple Silicon | `CharBerry-0.1.10-arm64.dmg`, `CharBerry-0.1.10-arm64-mac.zip` |
+| Windows x64 | `CharBerry.Setup.0.1.12.exe` |
+| Linux x64 | `CharBerry-0.1.12.AppImage`, `charberry_0.1.12_amd64.deb` |
+| macOS x64 | `CharBerry-0.1.12.dmg`, `CharBerry-0.1.12-mac.zip` |
+| macOS Apple Silicon | `CharBerry-0.1.12-arm64.dmg`, `CharBerry-0.1.12-arm64-mac.zip` |
 
 ### Features
 
@@ -78,6 +78,14 @@ Aktuelle Version: **0.1.10**
 | **Autosave** | Lokale JSON-Persistenz mit Normalisierung beschädigter oder älterer Daten |
 | **Responsive UI** | Desktop- und schmale Layouts per Playwright-Screenshots abgesichert |
 | **App-Chrome** | Kompakte BoltBerry-inspirierte Titelleiste mit einheitlicher Navigation und DPI-sicherem Fensterkontroll-Abstand |
+
+### Bedienung
+
+1. **Charakter wählen** - erstelle, importiere oder dupliziere Charaktere in der Bibliothek und suche bei größeren Gruppen über die Liste.
+2. **Bogen pflegen** - bearbeite Attribute, Kampfwerte, Ressourcen, Inventar, Zauber, Geschichte und Notizen in den jeweiligen Bereichen.
+3. **Am Tisch spielen** - nutze TP, Temp-TP, Zustände, schnelle Würfe und Ressourcen direkt in der Spielübersicht.
+4. **Daten sichern** - importiere/exportiere Charakterdaten, öffne den lokalen Datenordner oder nutze den Bridge-Export.
+5. **Shortcuts nachschlagen** - öffne die Hilfe über den Info-Button, `?` oder `F1`; `Escape` schließt geöffnete Dialoge.
 
 ### Schnellstart
 
@@ -177,18 +185,18 @@ Linux.
 
 ### Current Release
 
-Current version: **0.1.10**
+Current version: **0.1.12**
 
 - [Download the latest release](https://github.com/RollBerryStudios/CharBerry/releases/latest)
 - [View all releases](https://github.com/RollBerryStudios/CharBerry/releases)
-- Direct tag: [v0.1.10](https://github.com/RollBerryStudios/CharBerry/releases/tag/v0.1.10)
+- Direct tag: [v0.1.12](https://github.com/RollBerryStudios/CharBerry/releases/tag/v0.1.12)
 
 | Platform | Release artifact |
 |---|---|
-| Windows x64 | `CharBerry.Setup.0.1.10.exe` |
-| Linux x64 | `CharBerry-0.1.10.AppImage`, `charberry_0.1.10_amd64.deb` |
-| macOS x64 | `CharBerry-0.1.10.dmg`, `CharBerry-0.1.10-mac.zip` |
-| macOS Apple Silicon | `CharBerry-0.1.10-arm64.dmg`, `CharBerry-0.1.10-arm64-mac.zip` |
+| Windows x64 | `CharBerry.Setup.0.1.12.exe` |
+| Linux x64 | `CharBerry-0.1.12.AppImage`, `charberry_0.1.12_amd64.deb` |
+| macOS x64 | `CharBerry-0.1.12.dmg`, `CharBerry-0.1.12-mac.zip` |
+| macOS Apple Silicon | `CharBerry-0.1.12-arm64.dmg`, `CharBerry-0.1.12-arm64-mac.zip` |
 
 ### Features
 
@@ -210,6 +218,14 @@ Current version: **0.1.10**
 | **Autosave** | Local JSON persistence with normalization of damaged or older data |
 | **Responsive UI** | Desktop and narrow layouts covered by Playwright screenshots |
 | **App Chrome** | Compact BoltBerry-inspired title bar with unified navigation and DPI-safe native-control spacing |
+
+### Usage
+
+1. **Choose a character** - create, import, or duplicate characters in the library and use search for larger rosters.
+2. **Maintain the sheet** - edit abilities, combat values, resources, inventory, spells, story, and notes in their dedicated areas.
+3. **Play at the table** - use HP, temp HP, conditions, quick rolls, and resources directly from the play dashboard.
+4. **Control your data** - import/export character data, open the local data folder, or use the bridge export.
+5. **Check shortcuts** - open help with the info button, `?`, or `F1`; `Escape` closes open dialogs.
 
 ### Getting Started
 
